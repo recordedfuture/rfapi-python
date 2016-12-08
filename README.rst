@@ -32,6 +32,8 @@ Creating a client
     # or explicitely
     api = ApiClient(auth='my_token')
 
+Entity
+^^^^^^
 
 .. _Examples: docs/examples.rst
     
