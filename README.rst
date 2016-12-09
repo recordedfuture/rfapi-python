@@ -99,7 +99,7 @@ in the API documentation).
 .. code:: python
 
     # create a generator of events
-    references = api.get_events({
+    events = api.get_events({
         "type": "CyberAttack"
     }, limit=20)
     for e in events:
