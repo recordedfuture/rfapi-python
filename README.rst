@@ -86,7 +86,7 @@ in the API documentation).
     for r in references:
         print(r.fragment) # prints company names
 
-    The call returns an iterator.
+The call returns an iterator.
 
 Raw query
 ^^^^^^^^^
