@@ -84,9 +84,27 @@ in the API documentation).
         "type": "CyberAttack"
     }, limit=20)
     for r in references:
-        print(r.fragment) # prints company names
+        print(r.fragment) # prints event fragments
 
-The call returns an iterator.
+
+References
+^^^^^^^^^^
+
+Searching for events is done using ``get_events``. The first
+mandatory argument corresponds to the ``cluster`` section of API call (see
+the documentation for `Events (aka Clusters)
+<https://github.com/recordedfuture/api/wiki/RecordedFutureAPI#events>`__
+in the API documentation).
+
+.. code:: python
+
+    # create a generator of events
+    references = api.get_events({
+        "type": "CyberAttack"
+    }, limit=20)
+    for e in events:
+        print(e.id) # prints event id
+
 
 Raw query
 ^^^^^^^^^
@@ -101,7 +119,7 @@ Raw query
             "limit": 20
         }
     })
-    # get json as dict
+
     print(json.dumps(query_response.result, indent=2))
 
 Metadata
@@ -112,7 +130,7 @@ Metadata
     # Get dict with metadata info
     import json
     metadata = api.get_metadata()
-    # get json as dict
+
     print(json.dumps(metadata, indent=2))
 
 Status

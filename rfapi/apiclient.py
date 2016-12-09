@@ -2,13 +2,15 @@
 """
 import copy
 import logging
-import requests
 import csv
-from past.builtins import basestring
 from io import StringIO, BytesIO
+import requests
+# pylint: disable=redefined-builtin,redefined-variable-type
+from past.builtins import basestring
 
 from .auth import MissingTokenError, RFTokenAuth
-from .datamodel import Entity, Reference, QueryResponse, DotAccessDict
+from .datamodel import Entity, Reference, Event, DotAccessDict
+from .query import QueryResponse, BaseQuery, ReferenceQuery, EntityQuery, EventQuery
 from .dotindex import dot_index
 from . import __version__
 
@@ -27,11 +29,11 @@ class ApiClient(object):
     The api object will handle authentication and encapsulation of
     a query.
 
-    Example:
-       api = ApiClient()
-       query = {"entity": {"type": "Company", "name": "Recorded Future",
-                "limit": 20}}
-       result = api.query(query)
+    Ex:
+       >>> api = ApiClient()
+       >>> query = EntityQuery(type="Company", name="Recorded Future")
+       >>> result = api.query(query)
+       <class 'rfapi.query.QueryResponse'>
     """
 
     def __init__(self,
@@ -42,12 +44,14 @@ class ApiClient(object):
 
         Args:
             auth: If a token (string) is provided it will be used,
-                otherwise the environment variables RF_TOKEN (or legacy RECFUT_TOKEN)
-                are expected.
+                otherwise the environment variables RF_TOKEN (or legacy
+                RECFUT_TOKEN) are expected.
                 Also accepts a requests.auth.AuthBase object
             url: Recorded Future API url
             proxies: Same format as used by requests.
-                See http://docs.python-requests.org/en/master/user/advanced/#proxies
+
+        See http://docs.python-requests.org/en/master/user/advanced/#proxies
+        for more information about proxies.
 
         Raises:
            MissingTokenError if no token was provided.
@@ -85,7 +89,7 @@ class ApiClient(object):
         try:
             LOG.debug("Requesting query json=%s", query)
             headers = {
-                'User-agent': APP_ID
+                'User-Agent': APP_ID
             }
             response = requests.post(self._url,
                                      json=query,
@@ -97,23 +101,25 @@ class ApiClient(object):
             response.raise_for_status()
         except Exception as err:
             raise RemoteServerError(("Exception occurred during query:\n" +
-                             "Query was '{0}'\n" +
-                             "Exception: {1}").format(query, err))
+                                     "Query was '{0}'\n" +
+                                     "Exception: {1}").format(query, err))
 
-        if "output" in query and query['output'].get("format", "json") != "json":
+        if "output" in query \
+           and query['output'].get("format", "json") != "json":
             resp = response.text
         else:
             resp = response.json()
             if resp.get('status', '') == 'FAILURE':
                 raise RemoteServerError(("Server failure:\nQuery was '{0}'\n"
-                                 "HTTP Status: {1}\t"
-                                 "Message: {2}").format(
-                    query,
-                    resp.get('code', None),
-                    resp.get('error', 'NONE')))
+                                         "HTTP Status: {1}\t"
+                                         "Message: {2}").format(
+                                             query,
+                                             resp.get('code', None),
+                                             resp.get('error', 'NONE')))
 
         return QueryResponse(resp, response.headers)
 
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
     def paged_query(self,
                     query,
                     limit=1000,
@@ -134,7 +140,9 @@ class ApiClient(object):
         query = copy.deepcopy(query)
         query_type = self.get_query_type(query)
         if not query_type:
-            raise UnknownQueryTypeError('Unknown query type {}. Unable to page query.'.format(query_type))
+            raise UnknownQueryTypeError(
+                'Unknown query type {}. Unable to page query.'.format(
+                    query_type))
 
         query[query_type]['limit'] = min(batch_size, limit)
 
@@ -165,9 +173,9 @@ class ApiClient(object):
                 if n_results == 0:
                     yield csv_reader.fieldnames
                 next(csv_reader)  # skip header
-                for r in csv_reader:
+                for row in csv_reader:
                     n_results += 1
-                    yield r
+                    yield row
                     if n_results >= limit:
                         # ok we are done
                         return
@@ -185,9 +193,9 @@ class ApiClient(object):
     @staticmethod
     def get_query_type(query):
         words = ['instance', 'reference', 'source', 'cluster', 'entity']
-        for w in words:
-            if w in query:
-                return w
+        for word in words:
+            if word in query:
+                return word
         return None
 
     def get_references(self, query, limit=20):
@@ -202,14 +210,19 @@ class ApiClient(object):
 
         Ex:
         >>> api = ApiClient()
-        >>> type(api.get_references({"type": "CyberAttack"}, limit=20).next())
+        >>> type(next(api.get_references({"type": "CyberAttack"}, limit=20)))
         <class 'rfapi.datamodel.Reference'>
         """
-        refs = self.paged_query({
-            "reference": query
-        }, limit=limit, field="instances")
-        for r in refs:
-            yield Reference(r)
+        ref_query = ReferenceQuery(query)
+        refs = self.paged_query(ref_query, limit=limit, field="instances")
+        for ref in refs:
+            yield Reference(ref)
+
+    def get_events(self, query, limit=100):
+        event_query = EventQuery(query)
+        events = self.paged_query(event_query, limit=limit, field="events")
+        for event in events:
+            yield Event(event)
 
     def get_entity(self, entity_id):
         """Get an entity.
@@ -225,13 +238,11 @@ class ApiClient(object):
         >>> api.get_entity('ME4QX').name
         u'Recorded Future'
         """
-        resp = self.query({
-            "entity": {"id": entity_id}
-        })
+        resp = self.query(EntityQuery(id=entity_id))
         try:
-            e = Entity(resp.result['entity_details'][entity_id])
-            e.id = entity_id
-            return e
+            entity = Entity(resp.result['entity_details'][entity_id])
+            entity.id = entity_id
+            return entity
         except KeyError:
             return None
 
@@ -244,35 +255,36 @@ class ApiClient(object):
 
         Returns:
           An iterator yielding Entities.
-        
+
         Ex:
         >>> api = ApiClient()
-        >>> type(api.get_entities({"type": "Company"}, limit=20).next())
+        >>> type(next(api.get_entities({"type": "Company"}, limit=20)))
         <class 'rfapi.datamodel.Entity'>
         """
-        entities = self.paged_query({
-            "entity": query
-        }, limit=limit, field="entity_details")
+        entities = self.paged_query(EntityQuery(query),
+                                    limit=limit,
+                                    field="entity_details")
 
-        for (k, v) in entities:
-            e = Entity(v)
-            e.id = k
-            yield e
+        for (key, value) in entities:
+            entity = Entity(value)
+            entity.id = key
+            yield entity
 
     def get_status(self):
         """Find out your token's API usage, broken down by day."""
-        return DotAccessDict(self.query({
+        return DotAccessDict(self.query(BaseQuery({
             "status": {},
             "output": {
                 "statistics": True
             }
-        }).result)
+        })).result)
 
     def get_metadata(self):
         """Get metadata of types and events"""
-        return DotAccessDict(self.query({
-            "metadata": {}
-        }).result).types
+        # pylint: disable=no-member
+        return DotAccessDict(
+            self.query(BaseQuery(metadata=dict())).result
+        ).types
 
 
 class UnknownQueryTypeError(Exception):
