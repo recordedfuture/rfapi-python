@@ -33,6 +33,6 @@ Creating a client
     api = ApiClient(auth='my_token')
 
 
-.. _Examples: docs/examples.rst
+.. _Examples: http:docs/examples.rst
     
 .. _API documentation: https://github.com/recordedfuture/api/wiki/RecordedFutureAPI
