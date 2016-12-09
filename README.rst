@@ -32,10 +32,7 @@ Creating a client
     # or explicitely
     api = ApiClient(auth='my_token')
 
-Entity
-^^^^^^
 
 .. _Examples: docs/examples.rst
     
 .. _API documentation: https://github.com/recordedfuture/api/wiki/RecordedFutureAPI
-
