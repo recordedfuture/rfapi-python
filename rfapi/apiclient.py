@@ -7,16 +7,15 @@ import csv
 from past.builtins import basestring
 from io import StringIO, BytesIO
 
-from easydict import EasyDict
-
-from rfapi.auth import MissingTokenError, RFTokenAuth
-from rfapi.datamodel import Entity, Reference, QueryResponse
-from rfapi.dotindex import dot_index
+from .auth import MissingTokenError, RFTokenAuth
+from .datamodel import Entity, Reference, QueryResponse, DotAccessDict
+from .dotindex import dot_index
+from . import __version__
 
 LOG = logging.getLogger(__name__)
 LOG.addHandler(logging.NullHandler())
 
-APP_ID = 'rfapi_development'
+APP_ID = 'rfapi-python-' + __version__
 DEFAULT_TIMEOUT = 30  # seconds
 API_URL = 'https://api.recordedfuture.com/query/'
 DEFAULT_AUTH = 'auto'
@@ -74,10 +73,6 @@ class ApiClient(object):
 
         Returns:
             QueryResponse object
-
-        Raises:
-            MaxRetriesError if the configured number of attemps has been
-            made.
         """
         query = copy.deepcopy(query)
 
@@ -89,9 +84,13 @@ class ApiClient(object):
 
         try:
             LOG.debug("Requesting query json=%s", query)
+            headers = {
+                'User-agent': APP_ID
+            }
             response = requests.post(self._url,
                                      json=query,
                                      params=params,
+                                     headers=headers,
                                      auth=self._auth,
                                      proxies=self._proxies,
                                      timeout=timeout)
@@ -101,7 +100,7 @@ class ApiClient(object):
                              "Query was '{0}'\n" +
                              "Exception: {1}").format(query, err))
 
-        if 'output' in query and query['output'].get('format', "json") != 'json':
+        if "output" in query and query['output'].get("format", "json") != "json":
             resp = response.text
         else:
             resp = response.json()
@@ -198,7 +197,6 @@ class ApiClient(object):
         for r in refs:
             yield Reference(r)
 
-
     def get_entity(self, entity_id):
         resp = self.query({
             "entity": {"id": entity_id}
@@ -214,6 +212,7 @@ class ApiClient(object):
         entities = self.paged_query({
             "entity": query
         }, limit=limit, field="entity_details")
+
         for (k, v) in entities:
             e = Entity(v)
             e.id = k
@@ -221,7 +220,7 @@ class ApiClient(object):
 
     def get_status(self):
         """Find out your token's API usage, broken down by day."""
-        return EasyDict(self.query({
+        return DotAccessDict(self.query({
             "status": {},
             "output": {
                 "statistics": True
@@ -230,9 +229,10 @@ class ApiClient(object):
 
     def get_metadata(self):
         """Get metadata of types and events"""
-        return EasyDict(self.query({
+        return DotAccessDict(self.query({
             "metadata": {}
         }).result).types
+
 
 class UnknownQueryTypeError(Exception):
     """The query type could not be identified."""

@@ -56,7 +56,6 @@ setuptools.setup(
     keywords = ['API', 'Recorded Future'],
     install_requires = [
         'requests>=2.5',
-        'easydict>=1.6',
         'future'
     ],
     include_package_data=True,

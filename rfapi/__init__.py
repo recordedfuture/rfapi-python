@@ -11,5 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from .apiclient import ApiClient
+
+
+# must be specified first, is imported by ApiClient
 __version__ = '0.1.7'
+
+# export for easy access
+from .apiclient import ApiClient
