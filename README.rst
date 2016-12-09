@@ -87,7 +87,7 @@ in the API documentation).
         print(r.fragment) # prints event fragments
 
 
-References
+Events
 ^^^^^^^^^^
 
 Searching for events is done using ``get_events``. The first
