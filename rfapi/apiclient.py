@@ -191,6 +191,20 @@ class ApiClient(object):
         return None
 
     def get_references(self, query, limit=20):
+        """Fetch references (aka instances).
+
+        Args:
+          query: the 'instance' part of an RF API query.
+          limit: limit number of references in response.
+
+        Returns:
+          An iterator of References.
+
+        Ex:
+        >>> api = ApiClient()
+        >>> type(api.get_references({"type": "CyberAttack"}, limit=20).next())
+        <class 'rfapi.datamodel.Reference'>
+        """
         refs = self.paged_query({
             "reference": query
         }, limit=limit, field="instances")
@@ -198,6 +212,19 @@ class ApiClient(object):
             yield Reference(r)
 
     def get_entity(self, entity_id):
+        """Get an entity.
+
+        Args:
+          entity_id: the unique id of the entity
+
+        Returns:
+          An entity
+
+        Ex:
+        >>> api = ApiClient()
+        >>> api.get_entity('ME4QX').name
+        u'Recorded Future'
+        """
         resp = self.query({
             "entity": {"id": entity_id}
         })
@@ -209,6 +236,20 @@ class ApiClient(object):
             return None
 
     def get_entities(self, query, limit=20):
+        """Get a list of matching entities.
+
+        Args:
+          query: the query
+          limit: on return this many matches
+
+        Returns:
+          An iterator yielding Entities.
+        
+        Ex:
+        >>> api = ApiClient()
+        >>> type(api.get_entities({"type": "Company"}, limit=20).next())
+        <class 'rfapi.datamodel.Entity'>
+        """
         entities = self.paged_query({
             "entity": query
         }, limit=limit, field="entity_details")
