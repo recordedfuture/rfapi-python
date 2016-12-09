@@ -13,13 +13,19 @@ See the `API
 documentation <https://github.com/recordedfuture/api/wiki/RecordedFutureAPI>`__
 for further details and example usage.
 
+Installing
+__________
+
 To install with pip run ``pip install rfapi``
 
 An API token is required to use the Recorded Future API. You can request
 a Recorded Future API token by contacting support@recordedfuture.com or
 your account representative. The easiest way to setup your program is to
-save your api token inside an enviroment variable ``RF_TOKEN``. It is
-also possible to explicitely pass a token in the constructor.
+save your API token inside an environment variable ``RF_TOKEN``. It is
+also possible to explicitly pass a token in the constructor.
+
+Examples
+________
 
 Creating a client
 ^^^^^^^^^^^^^^^^^
@@ -29,14 +35,15 @@ Creating a client
     from rfapi import ApiClient
     api = ApiClient()
 
-    # or explicitely
+    # or explicitly
     api = ApiClient(auth='my_token')
 
 
-.. _API documentation: https://github.com/recordedfuture/api/wiki/RecordedFutureAPI
-
 Entity
 ^^^^^^
+
+If you know the id of an entity, here's how to retrieve the
+information about it:
 
 .. code:: python
 
@@ -45,6 +52,12 @@ Entity
 
 Entities
 ^^^^^^^^
+
+Searching for entities is done using ``get_entities``. The first
+mandatory argument corresponds to the ``entity`` section of API call (see
+the documentation for `Entities
+<https://github.com/recordedfuture/api/wiki/RecordedFutureAPI#entity-query-example>`__
+in the API documentation).
 
 .. code:: python
 
@@ -58,6 +71,12 @@ Entities
 References
 ^^^^^^^^^^
 
+Searching for references is done using ``get_references``. The first
+mandatory argument corresponds to the ``instance`` section of API call (see
+the documentation for `References (aka Instances)
+<https://github.com/recordedfuture/api/wiki/RecordedFutureAPI#instance-query-example>`__
+in the API documentation).
+
 .. code:: python
 
     # create a generator of references
@@ -66,6 +85,8 @@ References
     }, limit=20)
     for r in references:
         print(r.fragment) # prints company names
+
+    The call returns an iterator.
 
 Raw query
 ^^^^^^^^^
