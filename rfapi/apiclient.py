@@ -30,10 +30,13 @@ class ApiClient(object):
     a query.
 
     Ex:
-       >>> api = ApiClient()
-       >>> query = EntityQuery(type="Company", name="Recorded Future")
-       >>> result = api.query(query)
-       <class 'rfapi.query.QueryResponse'>
+    >>> api = ApiClient()
+    >>> query = EntityQuery(type="Company", name="Recorded Future")
+    >>> result = api.query(query)
+    >>> type(result)
+    <class 'rfapi.query.QueryResponse'>
+    >>> result.content_type
+    'json'
     """
 
     def __init__(self,

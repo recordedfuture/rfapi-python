@@ -14,7 +14,7 @@
 """Python library for accessing Recorded Future, Inc. API"""
 
 # must be specified first, is imported by ApiClient
-__version__ = '0.1.7'  # nopep8
+__version__ = '1.0.0-beta1'  # nopep8
 
 # export for easy access
 from .apiclient import ApiClient  # pylint: disable=wrong-import-position

@@ -16,6 +16,7 @@ Future Temporal Analytics Engine across a vast set of events,
 entities, and time points spanning from the far past into the future.
 
 See the `API documentation <https://github.com/recordedfuture/api/wiki/RecordedFutureAPI>`__
+and `GitHub source <https://github.com/recordedfuture/rfapi-python>`__
 for further details and example usage.
 
 To install with pip run ``pip install rfapi``
@@ -38,7 +39,7 @@ Creating a client
     api = ApiClient(auth='my_token')
 
 
-.. _API documentation: https://github.com/recordedfuture/api/wiki/RecordedFutureAPI
+..
 """
 
 setuptools.setup(
