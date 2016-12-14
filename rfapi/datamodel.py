@@ -13,6 +13,7 @@
 # limitations under the License.
 """Data models to manipulate responses from the API."""
 
+
 class DotAccessDict(dict):
     """Creates a dict/object hybrid.
 

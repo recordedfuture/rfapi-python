@@ -2,7 +2,7 @@
 import unittest
 from rfapi import apiclient
 from rfapi.datamodel import Event, Entity, Reference
-from rfapi.query import QueryResponse
+from rfapi.query import JSONQueryResponse
 
 
 class ApiClientTest(unittest.TestCase):
@@ -30,7 +30,7 @@ class ApiClientTest(unittest.TestCase):
         }
         api = apiclient.ApiClient()
         resp = api.query(query)
-        self.assertIsInstance(resp, QueryResponse)
+        self.assertIsInstance(resp, JSONQueryResponse)
         result = resp.result
         self.assertEqual(result['entities'][0], 'ME4QX')
 

@@ -13,6 +13,7 @@
 # limitations under the License.
 """Helper classes for extracting data from recursive dicts."""
 
+
 def dot_index(index, data):
     """Internal method for indexing dicts by dot-notation.
 

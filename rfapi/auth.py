@@ -13,7 +13,11 @@
 # limitations under the License.
 """Auth provider for RF tokens stored in environment."""
 import os
+import email
+import hashlib
+import hmac
 import requests
+
 
 # pylint: disable=too-few-public-methods
 class RFTokenAuth(requests.auth.AuthBase):
@@ -24,12 +28,12 @@ class RFTokenAuth(requests.auth.AuthBase):
     def __init__(self, token):
         self.token = self._find_token() if token == 'auto' else token
 
-    def __call__(self, r):
+    def __call__(self, req):
         # If we still haven't a token we need to bail.
         if not self.token:
             raise MissingTokenError
-        r.headers['Authorization'] = "RF-TOKEN token=%s" % self.token
-        return r
+        req.headers['Authorization'] = "RF-TOKEN token=%s" % self.token
+        return req
 
     @staticmethod
     def _find_token():
@@ -38,6 +42,27 @@ class RFTokenAuth(requests.auth.AuthBase):
         if 'RF_TOKEN' in os.environ:
             return os.environ['RF_TOKEN']
         return None
+
+
+class SignatureHashAuth(requests.auth.AuthBase):
+    """Authenticate using signed queries."""
+    def __init__(self, username, userkey):
+        self.username = username
+        self.userkey = userkey
+
+    def __call__(self, req):
+        timestamp = email.Utils.formatdate()
+        split = req.path_url.split("?")
+        path_params = split[1] if len(split) > 1 else ""
+        hash_text = "?" + path_params + req.body + timestamp
+        hmac_hash = hmac.new(self.userkey,
+                             hash_text,
+                             hashlib.sha256).hexdigest()
+        req.headers['Date'] = timestamp
+        req.headers['Authorization'] = 'RF-HS256 user=%s, hash=%s' % (
+            self.username, hmac_hash
+        )
+        return req
 
 
 class MissingTokenError(Exception):

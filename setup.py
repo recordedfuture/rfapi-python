@@ -7,7 +7,7 @@ URL = 'https://github.com/recordedfuture/rfapi-python'
 LONG_DESCRIPTION = """rfapi-python
 ============
 
-Python library for using the Recorded Future API
+Python 2/3 library for using the Recorded Future API
 
 Recorded Future's API enables you to build analytic applications and
 perform analysis which is aware of events happening around the globe

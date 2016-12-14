@@ -2,24 +2,28 @@
 """
 import copy
 import logging
-import csv
-from io import StringIO, BytesIO
 import requests
 # pylint: disable=redefined-builtin,redefined-variable-type
 from past.builtins import basestring
 
 from .auth import MissingTokenError, RFTokenAuth
 from .datamodel import Entity, Reference, Event, DotAccessDict
-from .query import QueryResponse, BaseQuery, ReferenceQuery, EntityQuery, EventQuery
+from .query import JSONQueryResponse, \
+    CSVQueryResponse, \
+    BaseQueryResponse, \
+    BaseQuery, \
+    ReferenceQuery, \
+    EntityQuery, \
+    EventQuery, \
+    get_query_type
+
 from .dotindex import dot_index
-from . import __version__
+from . import APP_ID, API_URL
 
 LOG = logging.getLogger(__name__)
 LOG.addHandler(logging.NullHandler())
 
-APP_ID = 'rfapi-python-' + __version__
 DEFAULT_TIMEOUT = 30  # seconds
-API_URL = 'https://api.recordedfuture.com/query/'
 DEFAULT_AUTH = 'auto'
 
 
@@ -102,14 +106,20 @@ class ApiClient(object):
                                      proxies=self._proxies,
                                      timeout=timeout)
             response.raise_for_status()
+        except requests.HTTPError as err:
+            msg = "Exception occured during query: %s. Error was: %s"
+            self.logger.exception(msg, query, err.response.content)
+            raise err
         except Exception as err:
-            raise RemoteServerError(("Exception occurred during query:\n" +
-                                     "Query was '{0}'\n" +
-                                     "Exception: {1}").format(query, err))
+            self.logger.exception("Exception occured during query: %s.", query)
+            raise err
 
         if "output" in query \
            and query['output'].get("format", "json") != "json":
-            resp = response.text
+            if 'csv' in response.headers.get('content-type', ''):
+                return CSVQueryResponse(response.text, response)
+            else:
+                return BaseQueryResponse(response.text, response)
         else:
             resp = response.json()
             if resp.get('status', '') == 'FAILURE':
@@ -120,12 +130,12 @@ class ApiClient(object):
                                              resp.get('code', None),
                                              resp.get('error', 'NONE')))
 
-        return QueryResponse(resp, response.headers)
+            return JSONQueryResponse(resp, response)
 
     # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
     def paged_query(self,
                     query,
-                    limit=1000,
+                    limit=None,
                     batch_size=1000,
                     field=None,
                     unique=False):
@@ -141,65 +151,57 @@ class ApiClient(object):
 
         """
         query = copy.deepcopy(query)
-        query_type = self.get_query_type(query)
+        query_type = get_query_type(query)
         if not query_type:
             raise UnknownQueryTypeError(
                 'Unknown query type {}. Unable to page query.'.format(
                     query_type))
 
-        query[query_type]['limit'] = min(batch_size, limit)
+        if limit is None:
+            query[query_type]['limit'] = batch_size
+        else:
+            query[query_type]['limit'] = min(batch_size, limit)
 
         seen = set()
         n_results = 0
         while True:
-            resp = self.query(query)
-            if resp.is_json:
-                tmp = dot_index(field, resp.result)
-                for item in tmp:
-                    if unique:
-                        if item in seen:
-                            continue
-                        seen.add(item)
-                    n_results += 1
-                    yield item
-                    if n_results >= limit:
-                        # ok, we are done
-                        return
-            elif resp.content_type == 'csv':
-                import sys
-                if sys.version_info.major >= 3:
-                    lines = StringIO(resp.result)
-                else:
-                    lines = BytesIO(resp.result.encode('utf-8'))
+            query_response = self.query(query)
 
-                csv_reader = csv.DictReader(lines)
+            if isinstance(query_response, JSONQueryResponse):
+                if field is None:
+                    yield query_response.result
+                else:
+                    tmp = dot_index(field, query_response.result)
+                    for item in tmp:
+                        if unique:
+                            if item in seen:
+                                continue
+                            seen.add(item)
+                        n_results += 1
+                        yield item
+                        if limit is not None and n_results >= limit:
+                            # ok, we are done
+                            return
+            elif isinstance(query_response, CSVQueryResponse):
+                csv_reader = query_response.csv_reader()
                 if n_results == 0:
                     yield csv_reader.fieldnames
                 next(csv_reader)  # skip header
                 for row in csv_reader:
                     n_results += 1
                     yield row
-                    if n_results >= limit:
+                    if limit is not None and n_results >= limit:
                         # ok we are done
                         return
             else:
-                # Bad support, just return plain response
-                yield resp
+                # Bad support for paging, just return plain response
+                yield query_response
                 return
 
-            next_page_start = resp.next_page_start
-            if next_page_start is None:
+            if not query_response.has_more_results:
                 break
 
-            query[query_type]["page_start"] = next_page_start
-
-    @staticmethod
-    def get_query_type(query):
-        words = ['instance', 'reference', 'source', 'cluster', 'entity']
-        for word in words:
-            if word in query:
-                return word
-        return None
+            query[query_type]["page_start"] = query_response.next_page_start
 
     def get_references(self, query, limit=20):
         """Fetch references (aka instances).
@@ -207,6 +209,7 @@ class ApiClient(object):
         Args:
           query: the 'instance' part of an RF API query.
           limit: limit number of references in response.
+          Set to None for no limit
 
         Returns:
           An iterator of References.
@@ -222,6 +225,20 @@ class ApiClient(object):
             yield Reference(ref)
 
     def get_events(self, query, limit=100):
+        """Fetch events.
+
+        Args:
+          query: the 'cluster' part of an RF API query.
+          limit: limit number of events in response. Set to None for no limit
+
+        Returns:
+          An iterator of Events.
+
+        Ex:
+        >>> api = ApiClient()
+        >>> type(next(api.get_events({"type": "CyberAttack"}, limit=20)))
+        <class 'rfapi.datamodel.Event'>
+        """
         event_query = EventQuery(query)
         events = self.paged_query(event_query, limit=limit, field="events")
         for event in events:
@@ -275,19 +292,19 @@ class ApiClient(object):
 
     def get_status(self):
         """Find out your token's API usage, broken down by day."""
-        return DotAccessDict(self.query(BaseQuery({
+        resp = self.query(BaseQuery({
             "status": {},
             "output": {
                 "statistics": True
             }
-        })).result)
+        }))
+        return DotAccessDict(resp.result)
 
     def get_metadata(self):
         """Get metadata of types and events"""
+        resp = self.query(BaseQuery(metadata=dict()))
         # pylint: disable=no-member
-        return DotAccessDict(
-            self.query(BaseQuery(metadata=dict())).result
-        ).types
+        return DotAccessDict(resp.result).types
 
 
 class UnknownQueryTypeError(Exception):
