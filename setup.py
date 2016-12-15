@@ -60,7 +60,7 @@ setuptools.setup(
                     'edkrantz@recordedfuture.com'],
     license = 'Apache 2',
     url = URL,
-    download_url = '%s/tarball/%s' % (URL, rf_version),
+    download_url = '%s/tarball/%s' % (URL, version),
     keywords = ['API', 'Recorded Future'],
     install_requires = [
         'requests>=2.5',
