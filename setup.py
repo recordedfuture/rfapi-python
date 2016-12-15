@@ -1,7 +1,6 @@
 import os
 import setuptools
-
-from rfapi import __version__ as rf_version
+import re
 
 URL = 'https://github.com/recordedfuture/rfapi-python'
 LONG_DESCRIPTION = """rfapi-python
@@ -42,10 +41,18 @@ Creating a client
 ..
 """
 
+
+with open('rfapi/__init__.py', 'r') as fd:
+    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
+                        fd.read(), re.MULTILINE).group(1)
+
+if not version:
+    raise RuntimeError('Cannot find version information')
+
 setuptools.setup(
     name = 'rfapi',
     packages = ['rfapi'], # this must be the same as the name above
-    version = rf_version,
+    version = version,
     description = 'API access to the Recorded Future API.',
     long_description = LONG_DESCRIPTION,
     author = 'Recorded Future, Inc.',
