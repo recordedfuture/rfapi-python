@@ -6,7 +6,7 @@ import requests
 # pylint: disable=redefined-builtin,redefined-variable-type
 from past.builtins import basestring
 
-from .auth import MissingTokenError, RFTokenAuth
+from .auth import MissingAuthError, RFTokenAuth
 from .datamodel import Entity, Reference, Event, DotAccessDict
 from .query import JSONQueryResponse, \
     CSVQueryResponse, \
@@ -67,12 +67,12 @@ class ApiClient(object):
         self._proxies = proxies
         self.logger = LOG.getChild(self.__class__.__name__)
 
+        # set auth method if any. we defer checking auth mehtod until quering
+        self._auth = None
         if isinstance(auth, requests.auth.AuthBase):
             self._auth = auth
         elif isinstance(auth, basestring):
             self._auth = RFTokenAuth(auth)
-        else:
-            raise MissingTokenError()
 
     def query(self, query, params=None, timeout=DEFAULT_TIMEOUT):
         """Perform a standard query.
@@ -86,6 +86,10 @@ class ApiClient(object):
             QueryResponse object
         """
         query = copy.deepcopy(query)
+
+        # defer checking auth until we actually query.
+        if not self._auth:
+            raise MissingAuthError()
 
         if params is None:
             params = {}

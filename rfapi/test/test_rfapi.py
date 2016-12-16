@@ -8,8 +8,9 @@ from rfapi.query import JSONQueryResponse
 class ApiClientTest(unittest.TestCase):
 
     def test_missing_token(self):
-        with self.assertRaises(apiclient.MissingTokenError):
-            apiclient.ApiClient(auth=None)
+        with self.assertRaises(apiclient.MissingAuthError):
+            client = apiclient.ApiClient(auth=None)
+            client.get_status()
 
     def test_with_token(self):
         self.assertIsNotNone(apiclient.ApiClient('dummy'))

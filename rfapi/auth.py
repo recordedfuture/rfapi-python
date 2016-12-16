@@ -31,16 +31,16 @@ class RFTokenAuth(requests.auth.AuthBase):
     def __call__(self, req):
         # If we still haven't a token we need to bail.
         if not self.token:
-            raise MissingTokenError
+            raise MissingAuthError
         req.headers['Authorization'] = "RF-TOKEN token=%s" % self.token
         return req
 
     @staticmethod
     def _find_token():
-        if 'RECFUT_TOKEN' in os.environ:
-            return os.environ['RECFUT_TOKEN']
         if 'RF_TOKEN' in os.environ:
             return os.environ['RF_TOKEN']
+        if 'RECFUT_TOKEN' in os.environ:
+            return os.environ['RECFUT_TOKEN']
         return None
 
 
@@ -65,9 +65,9 @@ class SignatureHashAuth(requests.auth.AuthBase):
         return req
 
 
-class MissingTokenError(Exception):
+class MissingAuthError(Exception):
     """No token was supplied."""
 
     def __str__(self):
         """Format the error message."""
-        return 'no Recorded Future API key was provided.'
+        return 'no Recorded Future API key or authentication method was provided.'
