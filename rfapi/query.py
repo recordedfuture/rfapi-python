@@ -119,7 +119,7 @@ class CSVQueryResponse(BaseQueryResponse):
 class JSONQueryResponse(BaseQueryResponse):
     def _get_paging_info(self):
         """Get returned and total query hit counts"""
-        if (isinstance(self.result.get('count'), dict)):
+        if isinstance(self.result.get('count'), dict):
             for (key, obj) in self.result['count'].items():
                 if isinstance(obj, dict):
                     if 'returned' in obj and 'total' in obj:

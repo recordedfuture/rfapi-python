@@ -3,6 +3,7 @@
 import copy
 import logging
 import requests
+
 # pylint: disable=redefined-builtin,redefined-variable-type
 from past.builtins import basestring
 
@@ -23,7 +24,10 @@ from . import APP_ID, API_URL
 LOG = logging.getLogger(__name__)
 LOG.addHandler(logging.NullHandler())
 
-DEFAULT_TIMEOUT = 30  # seconds
+# connection and read timeouts in seconds
+DEFAULT_TIMEOUT = (30, 120)
+
+# authentication method
 DEFAULT_AUTH = 'auto'
 
 
@@ -65,7 +69,6 @@ class ApiClient(object):
         """
         self._url = url
         self._proxies = proxies
-        self.logger = LOG.getChild(self.__class__.__name__)
 
         # set auth method if any. we defer checking auth mehtod until quering
         self._auth = None
@@ -95,7 +98,7 @@ class ApiClient(object):
             params = {}
         else:
             params = copy.deepcopy(params)
-        params['rfapi_id'] = APP_ID
+        params['app_id'] = APP_ID
 
         try:
             LOG.debug("Requesting query json=%s", query)
@@ -112,10 +115,10 @@ class ApiClient(object):
             response.raise_for_status()
         except requests.HTTPError as err:
             msg = "Exception occured during query: %s. Error was: %s"
-            self.logger.exception(msg, query, err.response.content)
+            LOG.exception(msg, query, err.response.content)
             raise err
         except Exception as err:
-            self.logger.exception("Exception occured during query: %s.", query)
+            LOG.exception("Exception occured during query: %s.", query)
             raise err
 
         if "output" in query \
@@ -228,7 +231,7 @@ class ApiClient(object):
         for ref in refs:
             yield Reference(ref)
 
-    def get_events(self, query, limit=100):
+    def get_events(self, query, limit=20):
         """Fetch events.
 
         Args:

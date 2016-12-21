@@ -81,6 +81,38 @@ class ApiClientTest(unittest.TestCase):
         for a in resp:
             self.assertIsInstance(a, dict)
 
+    def test_entity_query_csv(self):
+        query = {
+            "entity": {
+                "type": "AttackVector",
+            },
+            "output": {
+                "format": "csv"
+            }
+        }
+        api = apiclient.ApiClient()
+        resp = api.paged_query(query, limit=30, batch_size=10)
+        head = next(resp)
+        self.assertIsInstance(head, list)
+        for a in resp:
+            self.assertIsInstance(a, dict)
+
+    def test_reference_query_csv(self):
+        query = {
+            "reference": {
+                "type": "CyberAttack",
+            },
+            "output": {
+                "format": "csv"
+            }
+        }
+        api = apiclient.ApiClient()
+        resp = api.paged_query(query, limit=30, batch_size=10)
+        head = next(resp)
+        self.assertIsInstance(head, list)
+        for a in resp:
+            self.assertIsInstance(a, dict)
+
     def test_events_query(self):
         query = {
             "type": "CyberAttack"

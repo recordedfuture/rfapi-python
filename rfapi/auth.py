@@ -23,7 +23,7 @@ import requests
 class RFTokenAuth(requests.auth.AuthBase):
     """Authenticate using a token stored in an environment variable.
 
-    The class will look for tokens in RF-TOKEN and RECFUT_TOKEN (legacy).
+    The class will look for tokens in RF_TOKEN and RECFUT_TOKEN (legacy).
     """
     def __init__(self, token):
         self.token = self._find_token() if token == 'auto' else token
@@ -51,6 +51,7 @@ class SignatureHashAuth(requests.auth.AuthBase):
         self.userkey = userkey
 
     def __call__(self, req):
+        # pylint: disable=no-member
         timestamp = email.Utils.formatdate()
         split = req.path_url.split("?")
         path_params = split[1] if len(split) > 1 else ""
@@ -70,4 +71,5 @@ class MissingAuthError(Exception):
 
     def __str__(self):
         """Format the error message."""
-        return 'no Recorded Future API key or authentication method was provided.'
+        return 'no Recorded Future API key or authentication ' \
+               'method was provided.'
