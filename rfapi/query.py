@@ -15,7 +15,7 @@
 import sys
 import csv
 from io import StringIO, BytesIO
-from rfapi.datamodel import DotAccessDict
+from .datamodel import DotAccessDict
 
 
 def get_query_type(query):

@@ -17,6 +17,7 @@ import email
 import hashlib
 import hmac
 import requests
+from .error import MissingAuthError
 
 
 # pylint: disable=too-few-public-methods
@@ -64,12 +65,3 @@ class SignatureHashAuth(requests.auth.AuthBase):
             self.username, hmac_hash
         )
         return req
-
-
-class MissingAuthError(Exception):
-    """No token was supplied."""
-
-    def __str__(self):
-        """Format the error message."""
-        return 'no Recorded Future API key or authentication ' \
-               'method was provided.'

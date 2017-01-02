@@ -6,9 +6,14 @@ import requests
 
 # pylint: disable=redefined-builtin,redefined-variable-type
 from past.builtins import basestring
+from future.utils import raise_from
 
-from .auth import MissingAuthError, RFTokenAuth
-from .datamodel import Entity, Reference, Event, DotAccessDict
+from .auth import RFTokenAuth
+from .datamodel import Entity, \
+    Reference, \
+    Event, \
+    DotAccessDict
+
 from .query import JSONQueryResponse, \
     CSVQueryResponse, \
     BaseQueryResponse, \
@@ -18,11 +23,15 @@ from .query import JSONQueryResponse, \
     EventQuery, \
     get_query_type
 
+from .error import RemoteServerError, \
+    UnknownQueryTypeError, \
+    JsonParseError, \
+    MissingAuthError
+
 from .dotindex import dot_index
 from . import APP_ID, API_URL
 
 LOG = logging.getLogger(__name__)
-LOG.addHandler(logging.NullHandler())
 
 # connection and read timeouts in seconds
 DEFAULT_TIMEOUT = (30, 120)
@@ -50,7 +59,8 @@ class ApiClient(object):
     def __init__(self,
                  auth=DEFAULT_AUTH,
                  url=API_URL,
-                 proxies=None):
+                 proxies=None,
+                 timeout=DEFAULT_TIMEOUT):
         """Initialize API.
 
         Args:
@@ -60,6 +70,7 @@ class ApiClient(object):
                 Also accepts a requests.auth.AuthBase object
             url: Recorded Future API url
             proxies: Same format as used by requests.
+            timeout: connection and read timeout used by the requests lib.
 
         See http://docs.python-requests.org/en/master/user/advanced/#proxies
         for more information about proxies.
@@ -69,6 +80,7 @@ class ApiClient(object):
         """
         self._url = url
         self._proxies = proxies
+        self._timeout = timeout
 
         # set auth method if any. we defer checking auth mehtod until quering
         self._auth = None
@@ -77,13 +89,12 @@ class ApiClient(object):
         elif isinstance(auth, basestring):
             self._auth = RFTokenAuth(auth)
 
-    def query(self, query, params=None, timeout=DEFAULT_TIMEOUT):
+    def query(self, query, params=None):
         """Perform a standard query.
 
         Args:
             query: a dict containing the query.
             params: a dict with additional parameters for the API request.
-            timeout: connection and read timeout used by the requests lib.
 
         Returns:
             QueryResponse object
@@ -99,6 +110,7 @@ class ApiClient(object):
         else:
             params = copy.deepcopy(params)
         params['app_id'] = APP_ID
+        query['comment'] = APP_ID
 
         try:
             LOG.debug("Requesting query json=%s", query)
@@ -111,7 +123,7 @@ class ApiClient(object):
                                      headers=headers,
                                      auth=self._auth,
                                      proxies=self._proxies,
-                                     timeout=timeout)
+                                     timeout=self._timeout)
             response.raise_for_status()
         except requests.HTTPError as err:
             msg = "Exception occured during query: %s. Error was: %s"
@@ -128,7 +140,12 @@ class ApiClient(object):
             else:
                 return BaseQueryResponse(response.text, response)
         else:
-            resp = response.json()
+            try:
+                resp = response.json()
+            except ValueError as e:
+                err = JsonParseError(str(e), resp.content)
+                raise_from(err, e)
+
             if resp.get('status', '') == 'FAILURE':
                 raise RemoteServerError(("Server failure:\nQuery was '{0}'\n"
                                          "HTTP Status: {1}\t"
@@ -160,9 +177,8 @@ class ApiClient(object):
         query = copy.deepcopy(query)
         query_type = get_query_type(query)
         if not query_type:
-            raise UnknownQueryTypeError(
-                'Unknown query type {}. Unable to page query.'.format(
-                    query_type))
+            msg = 'Unknown query type {}. Unable to page query.'
+            raise UnknownQueryTypeError(msg.format(query_type))
 
         if limit is None:
             query[query_type]['limit'] = batch_size
@@ -312,24 +328,3 @@ class ApiClient(object):
         resp = self.query(BaseQuery(metadata=dict()))
         # pylint: disable=no-member
         return DotAccessDict(resp.result).types
-
-
-class UnknownQueryTypeError(Exception):
-    """The query type could not be identified."""
-
-    def __init__(self, msg=''):
-        """Setup the exception.
-
-        Keyword arguments:
-        msg: a message that will be added to the exception.
-        """
-        Exception.__init__(self)
-        self.msg = msg
-
-    def __str__(self):
-        """Format the error message."""
-        return "Unable to page query. %s" % self.msg
-
-
-class RemoteServerError(Exception):
-    pass

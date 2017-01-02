@@ -19,4 +19,40 @@ APP_ID = 'rfapi-python-' + __version__  # nopep8
 API_URL = 'https://api.recordedfuture.com/query/'  # nopep8
 
 # export for easy access
-from .apiclient import ApiClient  # pylint: disable=wrong-import-position
+
+# pylint: disable=wrong-import-position
+from .auth import RFTokenAuth, \
+    SignatureHashAuth
+
+# pylint: disable=wrong-import-position
+from .error import MissingAuthError, \
+    RemoteServerError, \
+    JsonParseError, \
+    UnknownQueryTypeError
+
+# pylint: disable=wrong-import-position
+from .datamodel import Reference, Entity, Event
+
+# pylint: disable=wrong-import-position
+from .query import BaseQuery, \
+    ReferenceQuery, \
+    EntityQuery, \
+    EventQuery, \
+    BaseQueryResponse, \
+    CSVQueryResponse, \
+    JSONQueryResponse
+
+# pylint: disable=wrong-import-position
+from .apiclient import ApiClient
+
+
+# Set default logging handler to avoid "No handler found" warnings.
+import logging
+try:  # Python 2.7+
+    from logging import NullHandler
+except ImportError:
+    class NullHandler(logging.Handler):
+        def emit(self, record):
+            pass
+
+logging.getLogger(__name__).addHandler(NullHandler())
