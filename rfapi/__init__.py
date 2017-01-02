@@ -14,7 +14,7 @@
 """Python library for accessing Recorded Future, Inc. API"""
 
 # must be specified first, is imported by ApiClient
-__version__ = '1.0.0'  # nopep8
+__version__ = '1.1.0'  # nopep8
 APP_ID = 'rfapi-python-' + __version__  # nopep8
 API_URL = 'https://api.recordedfuture.com/query/'  # nopep8
 
