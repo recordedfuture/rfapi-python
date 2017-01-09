@@ -34,7 +34,10 @@ from . import APP_ID, API_URL
 LOG = logging.getLogger(__name__)
 
 # connection and read timeouts in seconds
-DEFAULT_TIMEOUT = (30, 120)
+DEFAULT_TIMEOUT = (10, 120)
+
+# number of retries for read timeouts
+DEFAULT_RETRIES = 3
 
 # authentication method
 DEFAULT_AUTH = 'auto'
@@ -89,12 +92,13 @@ class ApiClient(object):
         elif isinstance(auth, basestring):
             self._auth = RFTokenAuth(auth)
 
-    def query(self, query, params=None):
+    def query(self, query, params=None, tries_left=DEFAULT_RETRIES):
         """Perform a standard query.
 
         Args:
             query: a dict containing the query.
             params: a dict with additional parameters for the API request.
+            tries_left: number of retries for read timeouts
 
         Returns:
             QueryResponse object
@@ -129,9 +133,19 @@ class ApiClient(object):
             msg = "Exception occured during query: %s. Error was: %s"
             LOG.exception(msg, query, err.response.content)
             raise err
-        except Exception as err:
+        except requests.ReadTimeout:
+            if tries_left > 0:
+                LOG.exception("Read timeout during query. "
+                              "Retrying. Attempts left: %s" % tries_left)
+                tries_left -= 1
+                return self.query(query,
+                                  params=params,
+                                  tries_left=tries_left)
+            else:
+                raise
+        except requests.RequestException:
             LOG.exception("Exception occured during query: %s.", query)
-            raise err
+            raise
 
         if "output" in query \
            and query['output'].get("format", "json") != "json":
@@ -143,7 +157,7 @@ class ApiClient(object):
             try:
                 resp = response.json()
             except ValueError as e:
-                err = JsonParseError(str(e), resp.content)
+                err = JsonParseError(str(e), response.content)
                 raise_from(err, e)
 
             if resp.get('status', '') == 'FAILURE':
@@ -162,7 +176,8 @@ class ApiClient(object):
                     limit=None,
                     batch_size=1000,
                     field=None,
-                    unique=False):
+                    unique=False,
+                    raw=False):
         """Generator for paged query results.
 
         Args:
@@ -172,6 +187,7 @@ class ApiClient(object):
                 fields.
             batch_size: optional int
             unique: optional bool for filtering to unique values.
+            raw: return raw QueryResponse object
 
         """
         query = copy.deepcopy(query)
@@ -190,7 +206,11 @@ class ApiClient(object):
         while True:
             query_response = self.query(query)
 
-            if isinstance(query_response, JSONQueryResponse):
+            if raw:
+                n_results += query_response.returned_count
+                yield query_response
+
+            elif isinstance(query_response, JSONQueryResponse):
                 if field is None:
                     yield query_response.result
                 else:
@@ -209,7 +229,7 @@ class ApiClient(object):
                 csv_reader = query_response.csv_reader()
                 if n_results == 0:
                     yield csv_reader.fieldnames
-                next(csv_reader)  # skip header
+
                 for row in csv_reader:
                     n_results += 1
                     yield row
@@ -221,8 +241,13 @@ class ApiClient(object):
                 yield query_response
                 return
 
+            LOG.debug("Received %s/%s items" % (n_results,
+                                                query_response.total_count))
+            if query_response.total_count <= n_results:
+                return
+
             if not query_response.has_more_results:
-                break
+                return
 
             query[query_type]["page_start"] = query_response.next_page_start
 

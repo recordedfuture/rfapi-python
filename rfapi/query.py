@@ -16,6 +16,7 @@ import sys
 import csv
 from io import StringIO, BytesIO
 from .datamodel import DotAccessDict
+from past.builtins import long
 
 
 def get_query_type(query):
@@ -81,29 +82,26 @@ class BaseQueryResponse(object):
 
     @property
     def returned_count(self):
-        return self._get_paging_info()[0]
-
-    @property
-    def total_count(self):
-        return self._get_paging_info()[1]
+        return self._req_response.headers.get("X-RF-RETURNED-COUNT")
 
     @property
     def has_more_results(self):
         if self.next_page_start is None:
             return False
-        returned, total = self._get_paging_info()
-        if returned is not None and returned == total:
+
+        if self.returned_count is not None \
+                and self.returned_count == self.total_count:
             return False
         return True
 
     @property
     def next_page_start(self):
-        if isinstance(self.result, dict):
-            return self.result.get('next_page_start')
+        # this must be string
         return self._req_response.headers.get("X-RF-NEXT-PAGE-START")
 
-    def _get_paging_info(self):
-        return None, None
+    @property
+    def total_count(self):
+        return long(self._req_response.headers.get("X-RF-TOTAL-COUNT"))
 
 
 class CSVQueryResponse(BaseQueryResponse):
@@ -115,14 +113,18 @@ class CSVQueryResponse(BaseQueryResponse):
             lines = BytesIO(self.result.encode('utf-8'))
         return csv.DictReader(lines)
 
+    @property
+    def returned_count(self):
+        return len(self.result.encode('utf-8').splitlines()) - 1
+
 
 class JSONQueryResponse(BaseQueryResponse):
-    def _get_paging_info(self):
+    @property
+    def returned_count(self):
         """Get returned and total query hit counts"""
         if isinstance(self.result.get('count'), dict):
             for (key, obj) in self.result['count'].items():
                 if isinstance(obj, dict):
-                    if 'returned' in obj and 'total' in obj:
-                        return obj['returned'], obj['total']
-
-        return None, None
+                    if 'returned' in obj:
+                        return obj['returned']
+        return None
