@@ -1,12 +1,23 @@
 Changelog
 =========
 
+
+1.3.0 (2017-01-17)
+------------------
+
+- Add warning on incorrect limit when paging.
+- New: class InvalidRFQError replaces UnknownQueryTypeError.
+- Add feature to set app_version and app_name for tracking.
+- Use headers only for paging.
+- Some pep8 fixes.
+- Minor bug fixes.
+
 1.2.0 (2017-01-09)
 ------------------
 
-- Add retry logic on read timeouts
-- Fix CSV paging
-- Add option to return QueryResponse objects when paging
+- Add retry logic on read timeouts.
+- Fix CSV paging.
+- Add option to return QueryResponse objects when paging.
 
 
 1.1.0 (2017-01-02)
