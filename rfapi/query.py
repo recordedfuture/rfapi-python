@@ -15,17 +15,18 @@
 import sys
 import csv
 from io import StringIO, BytesIO
+from past.builtins import long  # pylint: disable=redefined-builtin
 from .datamodel import DotAccessDict
-from past.builtins import long
 
 
 def get_query_type(query):
-    for type in _query_type_map.keys():
-        if type in query:
-            return type
+    """Return types associated with a query."""
+    for atype in _QUERY_TYPE_MAP.keys():
+        if atype in query:
+            return atype
     return None
 
-_query_type_map = {
+_QUERY_TYPE_MAP = {
     'instance': ('instance', 'instances'),
     'reference': ('reference', 'instances'),
     'entity': ('entity', 'entities'),
@@ -35,57 +36,66 @@ _query_type_map = {
 
 
 class BaseQuery(DotAccessDict):
-    """Object to represent an any RFQ"""
+    """Object to represent an any RFQ."""
+
     pass
 
 
 class ReferenceQuery(BaseQuery):
-    """Object to represent a reference RFQ
+    """Object to represent a reference RFQ.
+
     See https://github.com/recordedfuture/api/wiki/RecordedFutureAPI#instances
     """
 
     def __init__(self, d=None, **kwargs):
+        """Initialize class."""
         BaseQuery.__init__(self)
         self.reference = d if d else {}
         self.reference.update(**kwargs)
 
 
 class EntityQuery(BaseQuery):
-    """Object to represent an entity RFQ
+    """Object to represent an entity RFQ.
+
     See https://github.com/recordedfuture/api/wiki/RecordedFutureAPI#entities
     """
 
     def __init__(self, d=None, **kwargs):
+        """Initialize class."""
         BaseQuery.__init__(self)
         self.entity = d if d else {}
         self.entity.update(**kwargs)
 
 
 class EventQuery(BaseQuery):
-    """Object to represent an event/cluster RFQ
+    """Object to represent an event/cluster RFQ.
+
     See https://github.com/recordedfuture/api/wiki/RecordedFutureAPI#events
     """
 
     def __init__(self, d=None, **kwargs):
+        """Initialize class."""
         BaseQuery.__init__(self)
         self.cluster = d if d else {}
         self.cluster.update(**kwargs)
 
 
 class BaseQueryResponse(object):
-    """Hold response from an RFQ
-    """
+    """Hold response from an RFQ."""
 
     def __init__(self, result, req_response):
+        """Initialize class."""
         self.result = result
         self._req_response = req_response
 
     @property
     def returned_count(self):
-        return self._req_response.headers.get("X-RF-RETURNED-COUNT")
+        """The number of returned answers."""
+        return long(self._req_response.headers.get("X-RF-RETURNED-COUNT"))
 
     @property
     def has_more_results(self):
+        """True if there are more answers to the query."""
         if self.next_page_start is None:
             return False
 
@@ -96,35 +106,31 @@ class BaseQueryResponse(object):
 
     @property
     def next_page_start(self):
+        """Return pointer to next page."""
         # this must be string
         return self._req_response.headers.get("X-RF-NEXT-PAGE-START")
 
     @property
     def total_count(self):
+        """Return total count of answers."""
         return long(self._req_response.headers.get("X-RF-TOTAL-COUNT"))
 
 
 class CSVQueryResponse(BaseQueryResponse):
+    """Holds the query result in CSV format."""
 
     def csv_reader(self):
+        """Return results as a CSV reader object.
+
+        See python module csv for details.
+        """
         if sys.version_info.major >= 3:
             lines = StringIO(self.result)
         else:
             lines = BytesIO(self.result.encode('utf-8'))
         return csv.DictReader(lines)
 
-    @property
-    def returned_count(self):
-        return len(self.result.encode('utf-8').splitlines()) - 1
-
 
 class JSONQueryResponse(BaseQueryResponse):
-    @property
-    def returned_count(self):
-        """Get returned and total query hit counts"""
-        if isinstance(self.result.get('count'), dict):
-            for (key, obj) in self.result['count'].items():
-                if isinstance(obj, dict):
-                    if 'returned' in obj:
-                        return obj['returned']
-        return None
+    """Holds the result in JSON format."""
+    pass

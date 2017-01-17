@@ -1,8 +1,8 @@
-"""Client library for the Recorded Future API.
-"""
+"""Client library for the Recorded Future API."""
 import copy
 import logging
 import requests
+import warnings
 
 # pylint: disable=redefined-builtin,redefined-variable-type
 from past.builtins import basestring
@@ -24,7 +24,7 @@ from .query import JSONQueryResponse, \
     get_query_type
 
 from .error import RemoteServerError, \
-    UnknownQueryTypeError, \
+    InvalidRFQError, \
     JsonParseError, \
     MissingAuthError
 
@@ -63,7 +63,9 @@ class ApiClient(object):
                  auth=DEFAULT_AUTH,
                  url=API_URL,
                  proxies=None,
-                 timeout=DEFAULT_TIMEOUT):
+                 timeout=DEFAULT_TIMEOUT,
+                 app_name=None,
+                 app_version=None):
         """Initialize API.
 
         Args:
@@ -74,6 +76,10 @@ class ApiClient(object):
             url: Recorded Future API url
             proxies: Same format as used by requests.
             timeout: connection and read timeout used by the requests lib.
+            app_name: an app name which is added to the user-agent http
+                header (ex "ExampleApp").
+            app_version: an app version which is added to the user-agent http
+                header (ex "1.0"). Use of this requires app_name above.
 
         See http://docs.python-requests.org/en/master/user/advanced/#proxies
         for more information about proxies.
@@ -85,6 +91,14 @@ class ApiClient(object):
         self._proxies = proxies
         self._timeout = timeout
 
+        # Setup app_id
+        if app_name is not None and app_version is not None:
+            self._app_id = '%s/%s %s' % (app_name, app_version, APP_ID)
+        elif app_name is not None:
+            self._app_id = '%s %s' % (app_name, APP_ID)
+        else:
+            self._app_id = '%s' % (APP_ID)
+
         # set auth method if any. we defer checking auth mehtod until quering
         self._auth = None
         if isinstance(auth, requests.auth.AuthBase):
@@ -92,6 +106,7 @@ class ApiClient(object):
         elif isinstance(auth, basestring):
             self._auth = RFTokenAuth(auth)
 
+    # pylint: disable=too-many-branches
     def query(self, query, params=None, tries_left=DEFAULT_RETRIES):
         """Perform a standard query.
 
@@ -113,13 +128,15 @@ class ApiClient(object):
             params = {}
         else:
             params = copy.deepcopy(params)
-        params['app_id'] = APP_ID
-        query['comment'] = APP_ID
+
+        # Add info about app and library to request.
+        params['app_id'] = self._app_id
+        query['comment'] = self._app_id
 
         try:
             LOG.debug("Requesting query json=%s", query)
             headers = {
-                'User-Agent': APP_ID
+                'User-Agent': self._app_id
             }
             response = requests.post(self._url,
                                      json=query,
@@ -136,7 +153,7 @@ class ApiClient(object):
         except requests.ReadTimeout:
             if tries_left > 0:
                 LOG.exception("Read timeout during query. "
-                              "Retrying. Attempts left: %s" % tries_left)
+                              "Retrying. Attempts left: %s", tries_left)
                 tries_left -= 1
                 return self.query(query,
                                   params=params,
@@ -156,9 +173,9 @@ class ApiClient(object):
         else:
             try:
                 resp = response.json()
-            except ValueError as e:
-                err = JsonParseError(str(e), response.content)
-                raise_from(err, e)
+            except ValueError as err:
+                errc = JsonParseError(str(err), response)
+                raise_from(errc, err)
 
             if resp.get('status', '') == 'FAILURE':
                 raise RemoteServerError(("Server failure:\nQuery was '{0}'\n"
@@ -194,7 +211,18 @@ class ApiClient(object):
         query_type = get_query_type(query)
         if not query_type:
             msg = 'Unknown query type {}. Unable to page query.'
-            raise UnknownQueryTypeError(msg.format(query_type))
+            raise InvalidRFQError(msg.format(query_type), query)
+
+        # Check for aggregate queries
+        output = query.get('output')
+        if isinstance(output, dict) and 'count' in output:
+            msg = 'Aggregate query cannot be used in paging'
+            raise InvalidRFQError(msg, query)
+
+        if 'limit' in query[query_type]:
+            msg = "Ignoring limit in query, use limit " \
+                  "and batch_size arguments in paged queries."
+            warnings.warn(msg, SyntaxWarning)
 
         if limit is None:
             query[query_type]['limit'] = batch_size
@@ -203,6 +231,7 @@ class ApiClient(object):
 
         seen = set()
         n_results = 0
+        # pylint: disable=too-many-nested-blocks
         while True:
             query_response = self.query(query)
 
@@ -241,8 +270,8 @@ class ApiClient(object):
                 yield query_response
                 return
 
-            LOG.debug("Received %s/%s items" % (n_results,
-                                                query_response.total_count))
+            LOG.debug("Received %s/%s items", n_results,
+                      query_response.total_count)
             if query_response.total_count <= n_results:
                 return
 
@@ -349,7 +378,7 @@ class ApiClient(object):
         return DotAccessDict(resp.result)
 
     def get_metadata(self):
-        """Get metadata of types and events"""
+        """Get metadata of types and events."""
         resp = self.query(BaseQuery(metadata=dict()))
         # pylint: disable=no-member
         return DotAccessDict(resp.result).types

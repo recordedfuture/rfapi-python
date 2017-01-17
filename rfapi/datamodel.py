@@ -28,7 +28,9 @@ class DotAccessDict(dict):
     >>> example
     {'key2': 'value2', 'key1': 'value1'}
     """
+
     def __init__(self, d=None, **kwargs):
+        """Initialize the class."""
         dict.__init__(self)
         if d is None:
             d = {}
@@ -42,6 +44,7 @@ class DotAccessDict(dict):
                 setattr(self, key, getattr(self, key))
 
     def __setattr__(self, name, value):
+        """Set attribute name to value."""
         if isinstance(value, (list, tuple)):
             value = [self.__class__(x)
                      if isinstance(x, dict) else x for x in value]
@@ -52,15 +55,18 @@ class DotAccessDict(dict):
 
 
 class Entity(DotAccessDict):
-    """Dict with dot access to values"""
+    """Dict with dot access to values."""
+
     pass
 
 
 class Reference(DotAccessDict):
-    """Dict with dot access to values"""
+    """Dict with dot access to values."""
+
     pass
 
 
 class Event(DotAccessDict):
-    """Dict with dot access to values"""
+    """Dict with dot access to values."""
+
     pass

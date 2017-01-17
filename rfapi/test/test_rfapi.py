@@ -1,6 +1,6 @@
 """Test suite for apiclient."""
 import unittest
-from rfapi import apiclient
+from rfapi import apiclient, __version__
 from rfapi.datamodel import Event, Entity, Reference
 from rfapi.query import JSONQueryResponse
 
@@ -131,3 +131,34 @@ class ApiClientTest(unittest.TestCase):
         api = apiclient.ApiClient()
         status = api.get_status()
         self.assertIsInstance(status, dict)
+
+    def test_app_id(self):
+        api = apiclient.ApiClient(app_name='UnitTest')
+        self.assertEqual(api._app_id,
+                         'UnitTest rfapi-python/%s' % __version__)
+        api = apiclient.ApiClient(app_name='UnitTest', app_version='42')
+        self.assertEqual(api._app_id,
+                         'UnitTest/42 rfapi-python/%s' % __version__)
+        api = apiclient.ApiClient()
+        self.assertEqual(api._app_id,
+                         'rfapi-python/%s' % __version__)
+
+    def test_paging_aggregate_query_fails(self):
+        with self.assertRaises(apiclient.InvalidRFQError):
+            client = apiclient.ApiClient()
+            query = {
+                "instance": {
+                    "type": "Acquisition",
+                },
+                "output": {
+                    "count": {
+                        "axis": [
+                            "publication_year"
+                        ],
+                        "values": [
+                            "instances"
+                        ]
+                    }
+                }
+            }
+            next(client.paged_query(query))

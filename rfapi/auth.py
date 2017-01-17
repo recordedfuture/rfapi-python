@@ -26,10 +26,13 @@ class RFTokenAuth(requests.auth.AuthBase):
 
     The class will look for tokens in RF_TOKEN and RECFUT_TOKEN (legacy).
     """
+
     def __init__(self, token):
+        """Initialize the class. Provide a valid token."""
         self.token = self._find_token() if token == 'auto' else token
 
     def __call__(self, req):
+        """Add the authentication header when class is called."""
         # If we still haven't a token we need to bail.
         if not self.token:
             raise MissingAuthError
@@ -47,11 +50,14 @@ class RFTokenAuth(requests.auth.AuthBase):
 
 class SignatureHashAuth(requests.auth.AuthBase):
     """Authenticate using signed queries."""
+
     def __init__(self, username, userkey):
+        """Initialize. Provide a valid username and key."""
         self.username = username
         self.userkey = userkey
 
     def __call__(self, req):
+        """Add the auth headers to a request."""
         # pylint: disable=no-member
         timestamp = email.Utils.formatdate()
         split = req.path_url.split("?")
