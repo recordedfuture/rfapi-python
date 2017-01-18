@@ -131,7 +131,6 @@ class ApiClient(object):
 
         # Add info about app and library to request.
         params['app_id'] = self._app_id
-        query['comment'] = self._app_id
 
         try:
             LOG.debug("Requesting query json=%s", query)
@@ -241,6 +240,7 @@ class ApiClient(object):
 
             elif isinstance(query_response, JSONQueryResponse):
                 if field is None:
+                    n_results += query_response.returned_count
                     yield query_response.result
                 else:
                     tmp = dot_index(field, query_response.result)
@@ -267,6 +267,7 @@ class ApiClient(object):
                         return
             else:
                 # Bad support for paging, just return plain response
+                n_results += query_response.returned_count
                 yield query_response
                 return
 
