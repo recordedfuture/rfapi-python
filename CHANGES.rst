@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.4.0 (2017-01-24)
+- Fix exception message formatting bugs.
+- Fix paging bug
+- New classes HttpError and AuthenticationError that parses the server error
+- Add support to not use gzip for transfer.
+
 
 1.3.0 (2017-01-17)
 ------------------

@@ -1,5 +1,6 @@
 """Test suite for apiclient."""
 import unittest
+import sys
 from rfapi import apiclient, __version__
 from rfapi.datamodel import Event, Entity, Reference
 from rfapi.query import JSONQueryResponse
@@ -133,15 +134,16 @@ class ApiClientTest(unittest.TestCase):
         self.assertIsInstance(status, dict)
 
     def test_app_id(self):
+        rfapi_python = 'rfapi-python/%s' % __version__
+
         api = apiclient.ApiClient(app_name='UnitTest')
-        self.assertEqual(api._app_id,
-                         'UnitTest rfapi-python/%s' % __version__)
+        self.assertEqual(api._app_id, 'UnitTest %s' % rfapi_python)
+
         api = apiclient.ApiClient(app_name='UnitTest', app_version='42')
-        self.assertEqual(api._app_id,
-                         'UnitTest/42 rfapi-python/%s' % __version__)
+        self.assertEqual(api._app_id, 'UnitTest/42 %s' % rfapi_python)
+
         api = apiclient.ApiClient()
-        self.assertEqual(api._app_id,
-                         'rfapi-python/%s' % __version__)
+        self.assertEqual(api._app_id, rfapi_python)
 
     def test_paging_aggregate_query_fails(self):
         with self.assertRaises(apiclient.InvalidRFQError):
@@ -162,3 +164,36 @@ class ApiClientTest(unittest.TestCase):
                 }
             }
             next(client.paged_query(query))
+
+    def test_page_xml(self):
+        client = apiclient.ApiClient()
+        query = {
+            "cluster": {
+                "data_group": "IpAddress"
+            },
+            "output": {
+                "format": "xml/stix"
+            }
+        }
+        limit = 30
+        responses = [resp for resp in client.paged_query(query,
+                                                         batch_size=10,
+                                                         limit=limit)]
+        n_results = sum(map(lambda r: r.returned_count, responses))
+        self.assertEqual(n_results, limit)
+
+
+
+    def test_invalid_token(self):
+        with self._assertRaisesRegex(apiclient.AuthenticationError, "Unknown key=nosuchtoken"):
+            client = apiclient.ApiClient(auth='nosuchtoken')
+            client.get_status()
+
+    def test_invalid_query(self):
+        with self._assertRaisesRegex(apiclient.HttpError, "No such query"):
+            client = apiclient.ApiClient()
+            client.query({"apa": "bepa"})
+
+    @property
+    def _assertRaisesRegex(self):
+        return self.assertRaisesRegex if sys.version_info.major >= 3 else self.assertRaisesRegexp

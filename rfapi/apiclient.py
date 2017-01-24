@@ -26,7 +26,9 @@ from .query import JSONQueryResponse, \
 from .error import RemoteServerError, \
     InvalidRFQError, \
     JsonParseError, \
-    MissingAuthError
+    MissingAuthError, \
+    AuthenticationError, \
+    HttpError
 
 from .dotindex import dot_index
 from . import APP_ID, API_URL
@@ -65,7 +67,8 @@ class ApiClient(object):
                  proxies=None,
                  timeout=DEFAULT_TIMEOUT,
                  app_name=None,
-                 app_version=None):
+                 app_version=None,
+                 accept_gzip=True):
         """Initialize API.
 
         Args:
@@ -80,6 +83,7 @@ class ApiClient(object):
                 header (ex "ExampleApp").
             app_version: an app version which is added to the user-agent http
                 header (ex "1.0"). Use of this requires app_name above.
+            gzip:
 
         See http://docs.python-requests.org/en/master/user/advanced/#proxies
         for more information about proxies.
@@ -90,6 +94,7 @@ class ApiClient(object):
         self._url = url
         self._proxies = proxies
         self._timeout = timeout
+        self._accept_gzip = accept_gzip
 
         # Setup app_id
         if app_name is not None and app_version is not None:
@@ -137,6 +142,10 @@ class ApiClient(object):
             headers = {
                 'User-Agent': self._app_id
             }
+
+            if not self._accept_gzip:
+                headers['Accept-Encoding'] = ''
+
             response = requests.post(self._url,
                                      json=query,
                                      params=params,
@@ -145,10 +154,26 @@ class ApiClient(object):
                                      proxies=self._proxies,
                                      timeout=self._timeout)
             response.raise_for_status()
-        except requests.HTTPError as err:
+
+        except requests.HTTPError as req_http_err:
             msg = "Exception occured during query: %s. Error was: %s"
-            LOG.exception(msg, query, err.response.content)
-            raise err
+            LOG.exception(msg, query, response.content)
+
+            try:
+                if 'application/json' in response.headers.get('content-type'):
+                    resp = response.json()
+                    error_msg = resp.get('error')
+                    if response.status_code == 401:
+                        auth_err = AuthenticationError(error_msg, response)
+                        raise_from(auth_err, req_http_err)
+                    elif error_msg is not None:
+                        http_err = HttpError(error_msg, response)
+                        raise_from(http_err, req_http_err)
+            except ValueError:
+                pass
+
+            raise req_http_err
+
         except requests.ReadTimeout:
             if tries_left > 0:
                 LOG.exception("Read timeout during query. "
@@ -159,7 +184,8 @@ class ApiClient(object):
                                   tries_left=tries_left)
             else:
                 raise
-        except requests.RequestException:
+
+        except requests.RequestException as e:
             LOG.exception("Exception occured during query: %s.", query)
             raise
 
@@ -266,10 +292,9 @@ class ApiClient(object):
                         # ok we are done
                         return
             else:
-                # Bad support for paging, just return plain response
+                # XML, just return plain response
                 n_results += query_response.returned_count
                 yield query_response
-                return
 
             LOG.debug("Received %s/%s items", n_results,
                       query_response.total_count)
@@ -277,6 +302,9 @@ class ApiClient(object):
                 return
 
             if not query_response.has_more_results:
+                return
+
+            if limit is not None and n_results >= limit:
                 return
 
             query[query_type]["page_start"] = query_response.next_page_start

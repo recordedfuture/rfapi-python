@@ -10,27 +10,16 @@ class Error(Exception):
 class MissingAuthError(Error):
     """No token was supplied."""
 
-    def __str__(self):
-        """Format the error message."""
-        return 'no Recorded Future API key or authentication ' \
-               'method was provided.'
+    def __init__(self):
+        """Init the error with the query"""
+        message = 'No Recorded Future API key or authentication ' \
+                  'method was provided.'
+        Error.__init__(self, message)
 
 
 class RemoteServerError(Error):
     """Thrown when the server encounters errors."""
-
     pass
-
-
-class JsonParseError(Error):
-    """Thrown when the client cannot parse the content as json."""
-
-    def __init__(self, message, response):
-        """Exception while parsing JSON. Add message and response."""
-        Error.__init__(self)
-        self.message = message
-        self.content = response.content
-        self.response = response
 
 
 class InvalidRFQError(Error):
@@ -38,6 +27,32 @@ class InvalidRFQError(Error):
 
     def __init__(self, message, query):
         """Init the error with the query"""
-        Error.__init__(self)
-        self.message = message
+        Error.__init__(self, message)
         self.query = query
+
+
+class HttpError(Error):
+    """Thrown when http call fails"""
+
+    def __init__(self, message, response):
+        """Init the error with the request module response object"""
+        Error.__init__(self, message)
+        self.response = response
+
+    @property
+    def content(self):
+        return self.response.content
+
+    @property
+    def status_code(self):
+        return self.response.status_code
+
+
+class JsonParseError(HttpError):
+    """Thrown when the client cannot parse the content as json."""
+    pass
+
+
+class AuthenticationError(HttpError):
+    """Thrown when the client on 401 error."""
+    pass
