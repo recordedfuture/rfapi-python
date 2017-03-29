@@ -29,10 +29,10 @@ save your API token inside an environment variable ``RF_TOKEN``. It is
 also possible to explicitly pass a token in the constructor. Different
 licensing models apply to the Raw API and v2 API.
 
-API v2
+Examples for API v2
 ________
 
-Creating an APIv2 client
+Creating an ApiV2Client
 ^^^^^^^^^^^^^^^^^
 
 .. code:: python
@@ -46,7 +46,7 @@ Creating an APIv2 client
 Examples for Raw API
 ________
 
-Creating a client
+Creating an ApiClient
 ^^^^^^^^^^^^^^^^^
 
 .. code:: python
