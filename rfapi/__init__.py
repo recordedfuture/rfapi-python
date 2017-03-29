@@ -14,11 +14,12 @@
 """Python library for accessing Recorded Future, Inc. API."""
 
 # must be specified first, is imported by ApiClient
-__version__ = '1.4.0'  # nopep8
+__version__ = '1.5.0'  # nopep8
 
 # RFQ-7231 about user agent: product/product-version
 APP_ID = 'rfapi-python/%s' % __version__
 API_URL = 'https://api.recordedfuture.com/query/'
+APIV2_URL = 'https://api.recordedfuture.com/v2/'
 
 # export for easy access
 
@@ -45,7 +46,8 @@ from .query import BaseQuery, \
     JSONQueryResponse  # nopep8
 
 # pylint: disable=wrong-import-position
-from .apiclient import ApiClient  # nopep8
+from .apiv1client import ApiClient  # nopep8
+from .apiv2client import ApiV2Client  # nopep8
 
 
 # Set default logging handler to avoid "No handler found" warnings.

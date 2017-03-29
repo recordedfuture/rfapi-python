@@ -22,11 +22,11 @@ class DotAccessDict(dict):
     equivalent.
 
     Ex:
-    >>> example = DotAccessDict()
-    >>> example.key1 = 'value1'
-    >>> example['key2'] = 'value2'
-    >>> example
-    {'key2': 'value2', 'key1': 'value1'}
+    # example = DotAccessDict()
+    # example.key1 = 'value1'
+    # example['key2'] = 'value2'
+    # (example['key1'], example.key2)
+    # => ('value2', 'value1')
     """
 
     def __init__(self, d=None, **kwargs):

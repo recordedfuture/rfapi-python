@@ -9,9 +9,15 @@ perform analysis which is aware of events happening around the globe
 Future Temporal Analytics™ Engine across a vast set of events, entities,
 and time points spanning from the far past into the future.
 
-See the `API
-documentation <https://github.com/recordedfuture/api/wiki/RecordedFutureAPI>`__
+We provide our users with 2 api clients in this package.
+The Raw API client provides access to our classical API to
+get references, entities, etc.  See the `Raw API documentation <https://github.com/recordedfuture/api/wiki/RecordedFutureAPI>`__
 for further details and example usage.
+
+See the `Raw API Explorer <https://api.recordedfuture.com/explore.html>`__
+
+The API v2 client provides a façade for our simplified cyber API v2
+See the `API v2 Explorer <https://api.recordedfuture.com/v2/>`__
 
 Installing
 __________
@@ -23,8 +29,22 @@ a Recorded Future API token by contacting support@recordedfuture.com or
 your account representative. The easiest way to setup your program is to
 save your API token inside an environment variable ``RF_TOKEN``. It is
 also possible to explicitly pass a token in the constructor.
+Different licensing models apply to the Raw API and v2 API.
 
-Examples
+________
+
+Creating an APIv2 client
+^^^^^^^^^^^^^^^^^
+
+.. code:: python
+
+    from rfapi import ApiV2Client
+    api = ApiV2Client()
+
+    # or explicitly
+    api = ApiV2Client(auth='my_token')
+
+Examples for Raw API
 ________
 
 Creating a client

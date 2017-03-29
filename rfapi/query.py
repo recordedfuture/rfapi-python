@@ -15,8 +15,11 @@
 import sys
 import csv
 from io import StringIO, BytesIO
-from past.builtins import long  # pylint: disable=redefined-builtin
 from .datamodel import DotAccessDict
+
+# Get from tuple with index for 2.6.x compatibility
+if sys.version_info[0] > 2:
+    from past.builtins import long  # pylint: disable=redefined-builtin
 
 
 def get_query_type(query):
@@ -91,7 +94,11 @@ class BaseQueryResponse(object):
     @property
     def returned_count(self):
         """The number of returned answers."""
-        return long(self._req_response.headers.get("X-RF-RETURNED-COUNT"))
+        if 'X-RF-RETURNED-COUNT' in self._req_response.headers:
+            return int(self._req_response.headers.get("X-RF-RETURNED-COUNT"))
+        if 'counts' in self.result:  # Indicates V2 api
+            return self.result['counts'].get('returned', None)
+        return None
 
     @property
     def has_more_results(self):
@@ -113,7 +120,13 @@ class BaseQueryResponse(object):
     @property
     def total_count(self):
         """Return total count of answers."""
-        return long(self._req_response.headers.get("X-RF-TOTAL-COUNT"))
+        if 'X-RF-TOTAL-COUNT' in self._req_response.headers:
+            return long(self._req_response.headers.get("X-RF-TOTAL-COUNT"))
+        elif 'counts' in self.result:  # Indicates V2 api
+            # force long, will be int in py3 otherwise
+            if 'total' in self.result['counts']:
+                return long(self.result['counts']['total'])
+        return None
 
 
 class CSVQueryResponse(BaseQueryResponse):
@@ -124,7 +137,8 @@ class CSVQueryResponse(BaseQueryResponse):
 
         See python module csv for details.
         """
-        if sys.version_info.major >= 3:
+        # Get from tuple with index for 2.6.x compatibility
+        if sys.version_info[0] >= 3:
             lines = StringIO(self.result)
         else:
             lines = BytesIO(self.result.encode('utf-8'))
@@ -134,3 +148,46 @@ class CSVQueryResponse(BaseQueryResponse):
 class JSONQueryResponse(BaseQueryResponse):
     """Holds the result in JSON format."""
     pass
+
+
+class ApiV2Response(JSONQueryResponse):
+    """Holds the result in JSON format for APIv2 requests."""
+
+    @property
+    def entities(self):
+        for value in self.result['data']['results']:
+            dic = DotAccessDict(value)
+            if 'entity' in dic:
+                dic.id = dic['entity']['id']
+            yield dic
+
+
+class ApiV2FileResponse(object):
+    """Holds file based responses."""
+
+    def __init__(self, response):
+        self.response = response
+
+    def iter_content(self, **kwargs):
+        """Returns a generator with content."""
+        return self.response.iter_content(**kwargs)
+
+    def iter_lines(self, **kwargs):
+        """Returns a generator with lines."""
+        return self.response.iter_lines(**kwargs)
+
+
+class ApiV2CsvFileResponse(ApiV2FileResponse):
+    """Holds CSV file based responses."""
+
+    @property
+    def csv_reader(self):
+        """Return results as a CSV reader object.
+
+        See python module csv for details.
+        """
+        if sys.version_info.major >= 3:
+            lines = StringIO(self.response.text)
+        else:
+            lines = BytesIO(self.response.text.encode('utf-8'))
+        return csv.DictReader(lines)

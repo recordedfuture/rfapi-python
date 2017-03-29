@@ -27,16 +27,20 @@ class RFTokenAuth(requests.auth.AuthBase):
     The class will look for tokens in RF_TOKEN and RECFUT_TOKEN (legacy).
     """
 
-    def __init__(self, token):
+    def __init__(self, token, api_version=1):
         """Initialize the class. Provide a valid token."""
         self.token = self._find_token() if token == 'auto' else token
+        self._api_version = api_version
 
     def __call__(self, req):
         """Add the authentication header when class is called."""
         # If we still haven't a token we need to bail.
         if not self.token:
             raise MissingAuthError
-        req.headers['Authorization'] = "RF-TOKEN token=%s" % self.token
+        if self._api_version == 1:
+            req.headers['Authorization'] = "RF-TOKEN token=%s" % self.token
+        else:
+            req.headers['X-RFToken'] = self.token
         return req
 
     @staticmethod

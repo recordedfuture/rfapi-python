@@ -1,37 +1,41 @@
+# Copyright 2016,2017 Recorded Future, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 """Client library for the Recorded Future API."""
 import copy
 import logging
 import requests
-import warnings
+import sys
 
 # pylint: disable=redefined-builtin,redefined-variable-type
-from past.builtins import basestring
 from future.utils import raise_from
 
 from .auth import RFTokenAuth
-from .datamodel import Entity, \
-    Reference, \
-    Event, \
-    DotAccessDict
 
 from .query import JSONQueryResponse, \
     CSVQueryResponse, \
-    BaseQueryResponse, \
-    BaseQuery, \
-    ReferenceQuery, \
-    EntityQuery, \
-    EventQuery, \
-    get_query_type
+    BaseQueryResponse
 
-from .error import RemoteServerError, \
-    InvalidRFQError, \
-    JsonParseError, \
+from .error import JsonParseError, \
     MissingAuthError, \
     AuthenticationError, \
     HttpError
 
-from .dotindex import dot_index
-from . import APP_ID, API_URL
+from . import APP_ID
+# Get from tuple with index for 2.6.x compatibility
+if sys.version_info[0] > 2:
+    from past.builtins import basestring
 
 LOG = logging.getLogger(__name__)
 
@@ -45,90 +49,69 @@ DEFAULT_RETRIES = 3
 DEFAULT_AUTH = 'auto'
 
 
-class ApiClient(object):
-    """Provides simplified access to the Recorded Future API.
-
-    The api object will handle authentication and encapsulation of
-    a query.
-
-    Ex:
-    >>> api = ApiClient()
-    >>> query = EntityQuery(type="Company", name="Recorded Future")
-    >>> result = api.query(query)
-    >>> type(result)
-    <class 'rfapi.query.QueryResponse'>
-    >>> result.content_type
-    'json'
-    """
+class BaseApiClient(object):
+    """Internal class with common base methods for api v1 and v2 clients"""
 
     def __init__(self,
-                 auth=DEFAULT_AUTH,
-                 url=API_URL,
+                 auth,
+                 url,
                  proxies=None,
                  timeout=DEFAULT_TIMEOUT,
                  app_name=None,
                  app_version=None,
-                 accept_gzip=True):
-        """Initialize API.
-
-        Args:
-            auth: If a token (string) is provided it will be used,
-                otherwise the environment variables RF_TOKEN (or legacy
-                RECFUT_TOKEN) are expected.
-                Also accepts a requests.auth.AuthBase object
-            url: Recorded Future API url
-            proxies: Same format as used by requests.
-            timeout: connection and read timeout used by the requests lib.
-            app_name: an app name which is added to the user-agent http
-                header (ex "ExampleApp").
-            app_version: an app version which is added to the user-agent http
-                header (ex "1.0"). Use of this requires app_name above.
-            gzip:
-
-        See http://docs.python-requests.org/en/master/user/advanced/#proxies
-        for more information about proxies.
-
-        Raises:
-           MissingTokenError if no token was provided.
-        """
+                 pkg_name=None,
+                 pkg_version=None,
+                 accept_gzip=True,
+                 api_version=1):
         self._url = url
         self._proxies = proxies
         self._timeout = timeout
         self._accept_gzip = accept_gzip
 
         # Setup app_id
+        id_list = []
         if app_name is not None and app_version is not None:
-            self._app_id = '%s/%s %s' % (app_name, app_version, APP_ID)
+            id_list.append('%s/%s' % (app_name, app_version))
         elif app_name is not None:
-            self._app_id = '%s %s' % (app_name, APP_ID)
-        else:
-            self._app_id = '%s' % (APP_ID)
+            id_list.append('%s' % (app_name))
+        if pkg_name is not None and pkg_version is not None:
+            id_list.append('%s/%s' % (pkg_name, pkg_version))
+        elif pkg_name is not None:
+            id_list.append('%s' % (pkg_name))
+
+        id_list.append('%s' % APP_ID)
+        self._app_id = ' '.join(id_list)
 
         # set auth method if any. we defer checking auth mehtod until quering
         self._auth = None
         if isinstance(auth, requests.auth.AuthBase):
             self._auth = auth
         elif isinstance(auth, basestring):
-            self._auth = RFTokenAuth(auth)
+            self._auth = RFTokenAuth(auth, api_version)
 
-    # pylint: disable=too-many-branches
-    def query(self, query, params=None, tries_left=DEFAULT_RETRIES):
-        """Perform a standard query.
-
-        Args:
-            query: a dict containing the query.
-            params: a dict with additional parameters for the API request.
-            tries_left: number of retries for read timeouts
-
-        Returns:
-            QueryResponse object
-        """
-        query = copy.deepcopy(query)
-
-        # defer checking auth until we actually query.
+    def _check_auth(self):
         if not self._auth:
             raise MissingAuthError()
 
+    @staticmethod
+    def _raise_http_error(response, req_http_err):
+        try:
+            ct = response.headers.get('content-type')
+            if ct is not None and 'application/json' in ct:
+                resp = response.json()
+                error_msg = resp.get('error')
+                if response.status_code == 401:
+                    auth_err = AuthenticationError(error_msg, response)
+                    raise_from(auth_err, req_http_err)
+                elif error_msg is not None:
+                    http_err = HttpError(error_msg, response)
+                    raise_from(http_err, req_http_err)
+        except ValueError:
+            pass
+
+        raise req_http_err
+
+    def _prepare_params(self, params):
         if params is None:
             params = {}
         else:
@@ -136,278 +119,39 @@ class ApiClient(object):
 
         # Add info about app and library to request.
         params['app_id'] = self._app_id
+        return params
 
+    def _prepare_headers(self):
+        headers = {
+            'User-Agent': self._app_id
+        }
+
+        if not self._accept_gzip:
+            headers['Accept-Encoding'] = ''
+        return headers
+
+    def _parse_json_response(self, response):
         try:
-            LOG.debug("Requesting query json=%s", query)
-            headers = {
-                'User-Agent': self._app_id
-            }
+            resp = response.json()
+        except ValueError as err:
+            errc = JsonParseError(str(err), response)
+            raise_from(errc, err)
+        self._validate_json_response(resp)
+        return resp
 
-            if not self._accept_gzip:
-                headers['Accept-Encoding'] = ''
+    def _validate_json_response(self, resp):
+        pass
 
-            response = requests.post(self._url,
-                                     json=query,
-                                     params=params,
-                                     headers=headers,
-                                     auth=self._auth,
-                                     proxies=self._proxies,
-                                     timeout=self._timeout)
-            response.raise_for_status()
+    @staticmethod
+    def _make_json_response(resp, response):
+        return JSONQueryResponse(resp, response)
 
-        except requests.HTTPError as req_http_err:
-            msg = "Exception occured during query: %s. Error was: %s"
-            LOG.exception(msg, query, response.content)
-
-            try:
-                if 'application/json' in response.headers.get('content-type'):
-                    resp = response.json()
-                    error_msg = resp.get('error')
-                    if response.status_code == 401:
-                        auth_err = AuthenticationError(error_msg, response)
-                        raise_from(auth_err, req_http_err)
-                    elif error_msg is not None:
-                        http_err = HttpError(error_msg, response)
-                        raise_from(http_err, req_http_err)
-            except ValueError:
-                pass
-
-            raise req_http_err
-
-        except requests.ReadTimeout:
-            if tries_left > 0:
-                LOG.exception("Read timeout during query. "
-                              "Retrying. Attempts left: %s", tries_left)
-                tries_left -= 1
-                return self.query(query,
-                                  params=params,
-                                  tries_left=tries_left)
-            else:
-                raise
-
-        except requests.RequestException as e:
-            LOG.exception("Exception occured during query: %s.", query)
-            raise
-
-        if "output" in query \
-           and query['output'].get("format", "json") != "json":
+    def _make_response(self, expect_json, response):
+        if not expect_json:
             if 'csv' in response.headers.get('content-type', ''):
                 return CSVQueryResponse(response.text, response)
             else:
                 return BaseQueryResponse(response.text, response)
         else:
-            try:
-                resp = response.json()
-            except ValueError as err:
-                errc = JsonParseError(str(err), response)
-                raise_from(errc, err)
-
-            if resp.get('status', '') == 'FAILURE':
-                raise RemoteServerError(("Server failure:\nQuery was '{0}'\n"
-                                         "HTTP Status: {1}\t"
-                                         "Message: {2}").format(
-                                             query,
-                                             resp.get('code', None),
-                                             resp.get('error', 'NONE')))
-
-            return JSONQueryResponse(resp, response)
-
-    # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
-    def paged_query(self,
-                    query,
-                    limit=None,
-                    batch_size=1000,
-                    field=None,
-                    unique=False,
-                    raw=False):
-        """Generator for paged query results.
-
-        Args:
-            query: a dict containing the query.
-            limit: optional int, return a max of limit result units
-            field: optional string with dot-notation for getting specific
-                fields.
-            batch_size: optional int
-            unique: optional bool for filtering to unique values.
-            raw: return raw QueryResponse object
-
-        """
-        query = copy.deepcopy(query)
-        query_type = get_query_type(query)
-        if not query_type:
-            msg = 'Unknown query type {}. Unable to page query.'
-            raise InvalidRFQError(msg.format(query_type), query)
-
-        # Check for aggregate queries
-        output = query.get('output')
-        if isinstance(output, dict) and 'count' in output:
-            msg = 'Aggregate query cannot be used in paging'
-            raise InvalidRFQError(msg, query)
-
-        if 'limit' in query[query_type]:
-            msg = "Ignoring limit in query, use limit " \
-                  "and batch_size arguments in paged queries."
-            warnings.warn(msg, SyntaxWarning)
-
-        if limit is None:
-            query[query_type]['limit'] = batch_size
-        else:
-            query[query_type]['limit'] = min(batch_size, limit)
-
-        seen = set()
-        n_results = 0
-        # pylint: disable=too-many-nested-blocks
-        while True:
-            query_response = self.query(query)
-
-            if raw:
-                n_results += query_response.returned_count
-                yield query_response
-
-            elif isinstance(query_response, JSONQueryResponse):
-                if field is None:
-                    n_results += query_response.returned_count
-                    yield query_response.result
-                else:
-                    tmp = dot_index(field, query_response.result)
-                    for item in tmp:
-                        if unique:
-                            if item in seen:
-                                continue
-                            seen.add(item)
-                        n_results += 1
-                        yield item
-                        if limit is not None and n_results >= limit:
-                            # ok, we are done
-                            return
-            elif isinstance(query_response, CSVQueryResponse):
-                csv_reader = query_response.csv_reader()
-                if n_results == 0:
-                    yield csv_reader.fieldnames
-
-                for row in csv_reader:
-                    n_results += 1
-                    yield row
-                    if limit is not None and n_results >= limit:
-                        # ok we are done
-                        return
-            else:
-                # XML, just return plain response
-                n_results += query_response.returned_count
-                yield query_response
-
-            LOG.debug("Received %s/%s items", n_results,
-                      query_response.total_count)
-            if query_response.total_count <= n_results:
-                return
-
-            if not query_response.has_more_results:
-                return
-
-            if limit is not None and n_results >= limit:
-                return
-
-            query[query_type]["page_start"] = query_response.next_page_start
-
-    def get_references(self, query, limit=20):
-        """Fetch references (aka instances).
-
-        Args:
-          query: the 'instance' part of an RF API query.
-          limit: limit number of references in response.
-          Set to None for no limit
-
-        Returns:
-          An iterator of References.
-
-        Ex:
-        >>> api = ApiClient()
-        >>> type(next(api.get_references({"type": "CyberAttack"}, limit=20)))
-        <class 'rfapi.datamodel.Reference'>
-        """
-        ref_query = ReferenceQuery(query)
-        refs = self.paged_query(ref_query, limit=limit, field="instances")
-        for ref in refs:
-            yield Reference(ref)
-
-    def get_events(self, query, limit=20):
-        """Fetch events.
-
-        Args:
-          query: the 'cluster' part of an RF API query.
-          limit: limit number of events in response. Set to None for no limit
-
-        Returns:
-          An iterator of Events.
-
-        Ex:
-        >>> api = ApiClient()
-        >>> type(next(api.get_events({"type": "CyberAttack"}, limit=20)))
-        <class 'rfapi.datamodel.Event'>
-        """
-        event_query = EventQuery(query)
-        events = self.paged_query(event_query, limit=limit, field="events")
-        for event in events:
-            yield Event(event)
-
-    def get_entity(self, entity_id):
-        """Get an entity.
-
-        Args:
-          entity_id: the unique id of the entity
-
-        Returns:
-          An entity
-
-        Ex:
-        >>> api = ApiClient()
-        >>> api.get_entity('ME4QX').name
-        u'Recorded Future'
-        """
-        resp = self.query(EntityQuery(id=entity_id))
-        try:
-            entity = Entity(resp.result['entity_details'][entity_id])
-            entity.id = entity_id
-            return entity
-        except KeyError:
-            return None
-
-    def get_entities(self, query, limit=20):
-        """Get a list of matching entities.
-
-        Args:
-          query: the query
-          limit: on return this many matches
-
-        Returns:
-          An iterator yielding Entities.
-
-        Ex:
-        >>> api = ApiClient()
-        >>> type(next(api.get_entities({"type": "Company"}, limit=20)))
-        <class 'rfapi.datamodel.Entity'>
-        """
-        entities = self.paged_query(EntityQuery(query),
-                                    limit=limit,
-                                    field="entity_details")
-
-        for (key, value) in entities:
-            entity = Entity(value)
-            entity.id = key
-            yield entity
-
-    def get_status(self):
-        """Find out your token's API usage, broken down by day."""
-        resp = self.query(BaseQuery({
-            "status": {},
-            "output": {
-                "statistics": True
-            }
-        }))
-        return DotAccessDict(resp.result)
-
-    def get_metadata(self):
-        """Get metadata of types and events."""
-        resp = self.query(BaseQuery(metadata=dict()))
-        # pylint: disable=no-member
-        return DotAccessDict(resp.result).types
+            resp = self._parse_json_response(response)
+            return self._make_json_response(resp, response)

@@ -26,9 +26,9 @@ def dot_index(index, data):
 
     Example:
     >>> data  = {'apa': {'bepa': {'cepa': 'depa'}}}
-    >>> dot_index('apa', data)
+    >>> list(dot_index('apa', data))
     [('bepa', {'cepa': 'depa'})]
-    >>> dot_index('apa.bepa.cepa', data)
+    >>> list(dot_index('apa.bepa.cepa', data))
     ['depa']
     """
     if index:

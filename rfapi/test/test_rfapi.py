@@ -1,25 +1,26 @@
 """Test suite for apiclient."""
 import unittest
 import sys
-from rfapi import apiclient, __version__
+from rfapi import apiv1client, __version__
 from rfapi.datamodel import Event, Entity, Reference
 from rfapi.query import JSONQueryResponse
+from rfapi import ApiClient
 
 
 class ApiClientTest(unittest.TestCase):
-
+    _multiprocess_can_split_ = True
     def test_missing_token(self):
-        with self.assertRaises(apiclient.MissingAuthError):
-            client = apiclient.ApiClient(auth=None)
+        with self.assertRaises(apiv1client.MissingAuthError):
+            client = ApiClient(auth=None)
             client.get_status()
 
     def test_with_token(self):
-        self.assertIsNotNone(apiclient.ApiClient('dummy'))
+        self.assertIsNotNone(ApiClient('dummy'))
 
     def test_with_https_proxy(self):
         proxies = {"https": "http://proxy.example.com:3128"}
         self.assertIsNotNone(
-            apiclient.ApiClient('dummy', proxies=proxies)
+            ApiClient('dummy', proxies=proxies)
         )
 
     def test_api_query(self):
@@ -30,7 +31,7 @@ class ApiClientTest(unittest.TestCase):
                 "limit": 20
             }
         }
-        api = apiclient.ApiClient()
+        api = ApiClient()
         resp = api.query(query)
         self.assertIsInstance(resp, JSONQueryResponse)
         result = resp.result
@@ -40,14 +41,14 @@ class ApiClientTest(unittest.TestCase):
         query = {
             "type": "AttackVector",
         }
-        api = apiclient.ApiClient()
+        api = ApiClient()
         entities = api.get_entities(query, limit=100)
         for e in entities:
             self.assertIsInstance(e, Entity)
             self.assertEqual(e.type, "AttackVector")
 
     def test_get_entity(self):
-        api = apiclient.ApiClient()
+        api = ApiClient()
         entity = api.get_entity("B_FAG")
         self.assertIsInstance(entity, Entity)
         self.assertEqual(entity['name'], "United States")
@@ -59,7 +60,7 @@ class ApiClientTest(unittest.TestCase):
         query = {
             "type": "Acquisition"
         }
-        api = apiclient.ApiClient()
+        api = ApiClient()
         references = api.get_references(query, limit=10)
         for r in references:
             self.assertIsInstance(r, Reference)
@@ -75,7 +76,7 @@ class ApiClientTest(unittest.TestCase):
                 "inline_entities": False
             }
         }
-        api = apiclient.ApiClient()
+        api = ApiClient()
         resp = api.paged_query(query, limit=30, batch_size=10)
         head = next(resp)
         self.assertIsInstance(head, list)
@@ -91,7 +92,7 @@ class ApiClientTest(unittest.TestCase):
                 "format": "csv"
             }
         }
-        api = apiclient.ApiClient()
+        api = ApiClient()
         resp = api.paged_query(query, limit=30, batch_size=10)
         head = next(resp)
         self.assertIsInstance(head, list)
@@ -107,7 +108,7 @@ class ApiClientTest(unittest.TestCase):
                 "format": "csv"
             }
         }
-        api = apiclient.ApiClient()
+        api = ApiClient()
         resp = api.paged_query(query, limit=30, batch_size=10)
         head = next(resp)
         self.assertIsInstance(head, list)
@@ -118,36 +119,36 @@ class ApiClientTest(unittest.TestCase):
         query = {
             "type": "CyberAttack"
         }
-        api = apiclient.ApiClient()
+        api = ApiClient()
         events = api.get_events(query, limit=10)
         for e in events:
             self.assertIsInstance(e, Event)
 
     def test_metadata_query(self):
-        api = apiclient.ApiClient()
+        api = ApiClient()
         metadata = api.get_metadata()
         self.assertIsInstance(metadata, list)
 
     def test_status_query(self):
-        api = apiclient.ApiClient()
+        api = ApiClient()
         status = api.get_status()
         self.assertIsInstance(status, dict)
 
     def test_app_id(self):
         rfapi_python = 'rfapi-python/%s' % __version__
 
-        api = apiclient.ApiClient(app_name='UnitTest')
+        api = ApiClient(app_name='UnitTest')
         self.assertEqual(api._app_id, 'UnitTest %s' % rfapi_python)
 
-        api = apiclient.ApiClient(app_name='UnitTest', app_version='42')
+        api = ApiClient(app_name='UnitTest', app_version='42')
         self.assertEqual(api._app_id, 'UnitTest/42 %s' % rfapi_python)
 
-        api = apiclient.ApiClient()
+        api = ApiClient()
         self.assertEqual(api._app_id, rfapi_python)
 
     def test_paging_aggregate_query_fails(self):
-        with self.assertRaises(apiclient.InvalidRFQError):
-            client = apiclient.ApiClient()
+        with self.assertRaises(apiv1client.InvalidRFQError):
+            client = ApiClient()
             query = {
                 "instance": {
                     "type": "Acquisition",
@@ -166,7 +167,7 @@ class ApiClientTest(unittest.TestCase):
             next(client.paged_query(query))
 
     def test_page_xml(self):
-        client = apiclient.ApiClient()
+        client = ApiClient()
         query = {
             "cluster": {
                 "data_group": "IpAddress"
@@ -182,16 +183,14 @@ class ApiClientTest(unittest.TestCase):
         n_results = sum(map(lambda r: r.returned_count, responses))
         self.assertEqual(n_results, limit)
 
-
-
     def test_invalid_token(self):
-        with self._assertRaisesRegex(apiclient.AuthenticationError, "Unknown key=nosuchtoken"):
-            client = apiclient.ApiClient(auth='nosuchtoken')
+        with self._assertRaisesRegex(apiv1client.AuthenticationError, "Unknown key=nosuchtoken"):
+            client = ApiClient(auth='nosuchtoken')
             client.get_status()
 
     def test_invalid_query(self):
-        with self._assertRaisesRegex(apiclient.HttpError, "No such query"):
-            client = apiclient.ApiClient()
+        with self._assertRaisesRegex(apiv1client.HttpError, "No such query"):
+            client = ApiClient()
             client.query({"apa": "bepa"})
 
     @property

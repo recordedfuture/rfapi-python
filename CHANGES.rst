@@ -1,6 +1,13 @@
 Changelog
 =========
 
+1.5.0 (2017-03-29)
+------------------
+
+- Introduces ApiV2Client to use with Recorded Future simplified APIv2,
+and refactors some code into a common parent ApiClient for both the ApiV1Client and ApiV2Client
+- Minor bug fixes
+
 1.4.0 (2017-01-24)
 ------------------
 
