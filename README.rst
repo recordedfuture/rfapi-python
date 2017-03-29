@@ -9,13 +9,8 @@ perform analysis which is aware of events happening around the globe
 Future Temporal Analytics™ Engine across a vast set of events, entities,
 and time points spanning from the far past into the future.
 
-We provide our users with 2 api clients in this package.
-The Raw API client provides access to our classical API to
-get references, entities, etc.  See the `Raw API documentation <https://github.com/recordedfuture/api/wiki/RecordedFutureAPI>`__
-for further details and example usage. See the `Raw API Explorer <https://api.recordedfuture.com/explore.html>`__.
-
-The API v2 client provides a façade for our simplified cyber API v2.
-See the `API v2 Explorer <https://api.recordedfuture.com/v2/>`__
+We provide our users with 2 api clients in this package; the API v2
+and the RAW API, see below.
 
 Installing
 __________
@@ -32,6 +27,9 @@ licensing models apply to the Raw API and v2 API.
 Examples for API v2
 ________
 
+The API v2 client provides a façade for our simplified cyber API v2.
+See the `API v2 Explorer <https://api.recordedfuture.com/v2/>`__
+
 Creating an ApiV2Client
 ^^^^^^^^^^^^^^^^^
 
@@ -45,6 +43,10 @@ Creating an ApiV2Client
 
 Examples for Raw API
 ________
+
+The Raw API client provides access to our classical API to
+get references, entities, etc.  See the `Raw API documentation <https://github.com/recordedfuture/api/wiki/RecordedFutureAPI>`__
+for further details and example usage. See the `Raw API Explorer <https://api.recordedfuture.com/explore.html>`__.
 
 Creating an ApiClient
 ^^^^^^^^^^^^^^^^^
