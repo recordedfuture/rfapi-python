@@ -14,7 +14,7 @@
 """Python library for accessing Recorded Future, Inc. API."""
 
 # must be specified first, is imported by RawApiClient
-__version__ = '2.0'  # nopep8
+__version__ = '2.0.0'  # nopep8
 
 # RFQ-7231 about user agent: product/product-version
 APP_ID = 'rfapi-python/%s' % __version__
