@@ -17,8 +17,9 @@ import copy
 import logging
 import requests
 import sys
+import platform
 
-# pylint: disable=redefined-builtin,redefined-variable-type
+# pylint: disable=redefined-builtin
 from future.utils import raise_from
 
 from .auth import RFTokenAuth
@@ -50,7 +51,8 @@ DEFAULT_AUTH = 'auto'
 
 
 class BaseApiClient(object):
-    """Internal class with common base methods for api v1 and v2 clients"""
+    """Internal class with common base methods
+    for raw and connect api clients"""
 
     def __init__(self,
                  auth,
@@ -71,9 +73,10 @@ class BaseApiClient(object):
         # Setup app_id
         id_list = []
         if app_name is not None and app_version is not None:
-            id_list.append('%s/%s' % (app_name, app_version))
+            id_list.append('%s/%s (%s)' % (app_name, app_version,
+                                           platform.platform()))
         elif app_name is not None:
-            id_list.append('%s' % (app_name))
+            id_list.append('%s (%s)' % (app_name, platform.platform()))
         if pkg_name is not None and pkg_version is not None:
             id_list.append('%s/%s' % (pkg_name, pkg_version))
         elif pkg_name is not None:

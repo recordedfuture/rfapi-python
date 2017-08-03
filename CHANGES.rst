@@ -1,11 +1,22 @@
 Changelog
 =========
 
+2.0.0 (2017-08-01)
+------------------
+
+- Due to Recorded Future API branding conventions, we are changing the names of our two customer facing APIs.
+- The ApiClient will is now named RawApiClient and the ApiV2Client is now the ConnectApiClient.
+- Imports of ApiClient and ApiV2Client will continue to work, but are deprecated.
+- The files apiv1client.py and apiv2client.py have been renamed to rawapiclient.py and connectapiclient.py respectively.
+- QueryResponse classes in query.py with API V2 have been renamed, but will continue to work due to aliasing. These are ApiV2Response => ConnectApiResponse, ApiV2FileResponse => ConnectApiResponse, and ApiV2CsvFileResponse => ConnectApiCsvFileResponse.
+- Test files have been renamed.
+- Added functions to get demo events from the Connect API.
+
 1.5.0 (2017-03-29)
 ------------------
 
 - Introduces ApiV2Client to use with Recorded Future simplified APIv2,
-and refactors some code into a common parent ApiClient for both the ApiV1Client and ApiV2Client
+and refactors some code into a common parent BaseApiClient for both the ApiV1Client and ApiV2Client
 - Minor bug fixes
 
 1.4.0 (2017-01-24)
@@ -15,7 +26,6 @@ and refactors some code into a common parent ApiClient for both the ApiV1Client 
 - Fix paging bug
 - New classes HttpError and AuthenticationError that parses the server error
 - Add support to not use gzip for transfer.
-
 
 1.3.0 (2017-01-17)
 ------------------
@@ -33,7 +43,6 @@ and refactors some code into a common parent ApiClient for both the ApiV1Client 
 - Add retry logic on read timeouts.
 - Fix CSV paging.
 - Add option to return QueryResponse objects when paging.
-
 
 1.1.0 (2017-01-02)
 ------------------

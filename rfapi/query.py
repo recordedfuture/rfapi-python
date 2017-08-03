@@ -96,7 +96,7 @@ class BaseQueryResponse(object):
         """The number of returned answers."""
         if 'X-RF-RETURNED-COUNT' in self._req_response.headers:
             return int(self._req_response.headers.get("X-RF-RETURNED-COUNT"))
-        if 'counts' in self.result:  # Indicates V2 api
+        if 'counts' in self.result:  # Indicates Connect API
             return self.result['counts'].get('returned', None)
         return None
 
@@ -122,7 +122,7 @@ class BaseQueryResponse(object):
         """Return total count of answers."""
         if 'X-RF-TOTAL-COUNT' in self._req_response.headers:
             return long(self._req_response.headers.get("X-RF-TOTAL-COUNT"))
-        elif 'counts' in self.result:  # Indicates V2 api
+        elif 'counts' in self.result:  # Indicates Connect API
             # force long, will be int in py3 otherwise
             if 'total' in self.result['counts']:
                 return long(self.result['counts']['total'])
@@ -150,8 +150,8 @@ class JSONQueryResponse(BaseQueryResponse):
     pass
 
 
-class ApiV2Response(JSONQueryResponse):
-    """Holds the result in JSON format for APIv2 requests."""
+class ConnectApiResponse(JSONQueryResponse):
+    """Holds the result in JSON format for connect api requests."""
 
     @property
     def entities(self):
@@ -162,7 +162,7 @@ class ApiV2Response(JSONQueryResponse):
             yield dic
 
 
-class ApiV2FileResponse(object):
+class ConnectApiFileResponse(object):
     """Holds file based responses."""
 
     def __init__(self, response):
@@ -177,7 +177,7 @@ class ApiV2FileResponse(object):
         return self.response.iter_lines(**kwargs)
 
 
-class ApiV2CsvFileResponse(ApiV2FileResponse):
+class ConnectApiCsvFileResponse(ConnectApiFileResponse):
     """Holds CSV file based responses."""
 
     @property
@@ -186,8 +186,17 @@ class ApiV2CsvFileResponse(ApiV2FileResponse):
 
         See python module csv for details.
         """
-        if sys.version_info.major >= 3:
-            lines = StringIO(self.response.text)
+
+        if sys.version_info[0] >= 3:
+            # decode to bytes iterator per line
+            lines = map(lambda s: s.decode('utf-8'),
+                        self.response.iter_lines())
         else:
-            lines = BytesIO(self.response.text.encode('utf-8'))
+            lines = self.response.iter_lines()
         return csv.DictReader(lines)
+
+
+# deprecated since version 2.0, see ChangeLog
+ApiV2Response = ConnectApiResponse
+ApiV2FileResponse = ConnectApiResponse
+ApiV2CsvFileResponse = ConnectApiCsvFileResponse

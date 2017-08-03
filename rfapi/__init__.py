@@ -13,13 +13,13 @@
 # limitations under the License.
 """Python library for accessing Recorded Future, Inc. API."""
 
-# must be specified first, is imported by ApiClient
-__version__ = '1.5.0'  # nopep8
+# must be specified first, is imported by RawApiClient
+__version__ = '2.0'  # nopep8
 
 # RFQ-7231 about user agent: product/product-version
 APP_ID = 'rfapi-python/%s' % __version__
-API_URL = 'https://api.recordedfuture.com/query/'
-APIV2_URL = 'https://api.recordedfuture.com/v2/'
+RAW_API_URL = 'https://api.recordedfuture.com/query/'
+CONNECT_API_URL = 'https://api.recordedfuture.com/v2/'
 
 # export for easy access
 
@@ -46,11 +46,11 @@ from .query import BaseQuery, \
     JSONQueryResponse  # nopep8
 
 # pylint: disable=wrong-import-position
-from .apiv1client import ApiClient  # nopep8
-from .apiv2client import ApiV2Client  # nopep8
-
+from .rawapiclient import RawApiClient  # nopep8
+from .connectapiclient import ConnectApiClient  # nopep8
 
 # Set default logging handler to avoid "No handler found" warnings.
+# pylint: disable=wrong-import-order
 import logging  # nopep8
 try:  # Python 2.7+
     from logging import NullHandler
@@ -63,3 +63,9 @@ except ImportError:
             pass
 
 logging.getLogger(__name__).addHandler(NullHandler())
+
+# deprecated from version 2.0, see Changelog
+API_URL = RAW_API_URL
+APIV2_URL = CONNECT_API_URL
+ApiClient = RawApiClient
+ApiV2Client = ConnectApiClient

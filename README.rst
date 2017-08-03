@@ -9,37 +9,37 @@ perform analysis which is aware of events happening around the globe
 Future Temporal Analytics™ Engine across a vast set of events, entities,
 and time points spanning from the far past into the future.
 
-We provide our users with 2 api clients in this package; the API v2
-and the RAW API, see below.
+We provide our users with 2 API clients in this package; the Raw API Client
+and the Connect API Client, see below.
 
 Installing
 __________
 
 To install with pip run ``pip install rfapi``
 
-An API token is required to use the Recorded Future API. You can request
+An API token is required to use the Recorded Future APIs. You can request
 a Recorded Future API token by contacting support@recordedfuture.com or
 your account representative. The easiest way to setup your program is to
 save your API token inside an environment variable ``RF_TOKEN``. It is
-also possible to explicitly pass a token in the constructor. Different
-licensing models apply to the Raw API and v2 API.
+also possible to explicitly pass a token in the api client constructor. Different
+licensing models apply to the Raw API and Connect API.
 
-Examples for API v2
+Examples for Connect API
 ________
 
-The API v2 client provides a façade for our simplified cyber API v2.
-See the `API v2 Explorer <https://api.recordedfuture.com/v2/>`__
+The Connect API client provides a façade for our simplified Connect API.
+See the `Connect API Explorer <https://api.recordedfuture.com/v2/>`__.
 
-Creating an ApiV2Client
+Creating a ConnectApiClient
 ^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
-    from rfapi import ApiV2Client
-    api = ApiV2Client()
+    from rfapi import ConnectApiClient
+    api = ConnectApiClient()
 
     # or explicitly
-    api = ApiV2Client(auth='my_token')
+    api = ConnectApiClient(auth='my_token')
 
 Examples for Raw API
 ________
@@ -48,16 +48,16 @@ The Raw API client provides access to our classical API to
 get references, entities, etc.  See the `Raw API documentation <https://github.com/recordedfuture/api/wiki/RecordedFutureAPI>`__
 for further details and example usage. See the `Raw API Explorer <https://api.recordedfuture.com/explore.html>`__.
 
-Creating an ApiClient
+Creating a RawApiClient
 ^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
-    from rfapi import ApiClient
-    api = ApiClient()
+    from rfapi import RawApiClient
+    api = RawApiClient()
 
     # or explicitly
-    api = ApiClient(auth='my_token')
+    api = RawApiClient(auth='my_token')
 
 
 Entity
