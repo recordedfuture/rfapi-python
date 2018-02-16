@@ -38,6 +38,7 @@ class ConnectApiClientTest(unittest.TestCase):
                           set(['name', 'description', 'count',
                                'criticality', 'criticalityLabel']))
 
+    @unittest.skip
     def test_domain_riskrule(self):
         client = ConnectApiClient()
         resp = client.get_domain_riskrules()

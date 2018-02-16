@@ -66,7 +66,15 @@ class SignatureHashAuth(requests.auth.AuthBase):
         timestamp = email.Utils.formatdate()
         split = req.path_url.split("?")
         path_params = split[1] if len(split) > 1 else ""
-        hash_text = "?" + path_params + req.body + timestamp
+        body = req.body if req.body else ""
+
+        if "v2" in req.path_url:
+            v2_url = req.path_url.replace("/rfq", "")
+            hash_text = v2_url + body + timestamp
+        else:
+            hash_text = "?" + path_params + body + timestamp
+
+        print(hash_text)
         hmac_hash = hmac.new(self.userkey,
                              hash_text,
                              hashlib.sha256).hexdigest()

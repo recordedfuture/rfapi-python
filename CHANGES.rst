@@ -1,6 +1,18 @@
 Changelog
 =========
 
+2.2.0 (2018-02-16)
+------------------
+
+- Added support for Alert queries in the Connect API.
+- Fix SignatureHashAuth authentication for Connect API.
+- Minor improvements and bug fixes.
+
+2.1.0 (No public release)
+
+- Use a request session to reuse tcp connections.
+
+
 2.0.0 (2017-08-01)
 ------------------
 

@@ -44,7 +44,8 @@ class RawApiClient(BaseApiClient):
                  app_version=None,
                  pkg_name=None,
                  pkg_version=None,
-                 accept_gzip=True):
+                 accept_gzip=True,
+                 platform=None):
         """Initialize API.
 
         Args:
@@ -61,6 +62,7 @@ class RawApiClient(BaseApiClient):
                 header (ex "1.0"). Use of this requires app_name above.
             pkg_name and pkg_version: same as above for package.
             accept_gzip: whether or not we access gzip compressed data or not
+            platform: id of the platform running the script (ex Splunk_1.2.3)
 
         See http://docs.python-requests.org/en/master/user/advanced/#proxies
         for more information about proxies.
@@ -69,7 +71,8 @@ class RawApiClient(BaseApiClient):
                                proxies, timeout,
                                app_name, app_version,
                                pkg_name, pkg_version,
-                               accept_gzip)
+                               accept_gzip,
+                               platform)
 
     # pylint: disable=too-many-branches
     def query(self, query, params=None, tries_left=DEFAULT_RETRIES):
@@ -94,17 +97,17 @@ class RawApiClient(BaseApiClient):
 
         try:
             LOG.debug("Requesting query json=%s", query)
-            response = requests.post(self._url,
-                                     json=query,
-                                     params=params,
-                                     headers=headers,
-                                     auth=self._auth,
-                                     proxies=self._proxies,
-                                     timeout=self._timeout)
+            response = self._request_session.post(self._url,
+                                                  json=query,
+                                                  params=params,
+                                                  headers=headers,
+                                                  auth=self._auth,
+                                                  proxies=self._proxies,
+                                                  timeout=self._timeout)
             response.raise_for_status()
 
         except requests.HTTPError as req_http_err:
-            msg = "Exception occured during query: %s. Error was: %s"
+            msg = "An exception occurred during the query: %s. Error was: %s"
             LOG.exception(msg, query, response.content)
             self._raise_http_error(response, req_http_err)
 
@@ -327,14 +330,12 @@ class RawApiClient(BaseApiClient):
             entity.id = key
             yield entity
 
-    def get_status(self):
+    def get_status(self, show_statistics=True):
         """Find out your token's API usage, broken down by day."""
-        resp = self.query(BaseQuery({
-            "status": {},
-            "output": {
-                "statistics": True
-            }
-        }))
+        query = {"status": {}}
+        if show_statistics:
+            query["output"] = {"statistics": True}
+        resp = self.query(BaseQuery(query))
         return DotAccessDict(resp.result)
 
     def get_metadata(self):

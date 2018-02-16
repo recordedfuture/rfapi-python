@@ -21,6 +21,7 @@ import platform
 
 # pylint: disable=redefined-builtin
 from future.utils import raise_from
+from requests.adapters import HTTPAdapter
 
 from .auth import RFTokenAuth
 
@@ -49,6 +50,8 @@ DEFAULT_RETRIES = 3
 # authentication method
 DEFAULT_AUTH = 'auto'
 
+REQUESTS_POOL_MAXSIZE = 16
+
 
 class BaseApiClient(object):
     """Internal class with common base methods
@@ -64,6 +67,7 @@ class BaseApiClient(object):
                  pkg_name=None,
                  pkg_version=None,
                  accept_gzip=True,
+                 platform_id=None,
                  api_version=1):
         self._url = url
         self._proxies = proxies
@@ -82,8 +86,19 @@ class BaseApiClient(object):
         elif pkg_name is not None:
             id_list.append('%s' % (pkg_name))
 
-        id_list.append('%s' % APP_ID)
+        if platform_id is not None:
+            id_list.append('%s (%s)' % (APP_ID, platform_id))
+        else:
+            id_list.append('%s' % APP_ID)
         self._app_id = ' '.join(id_list)
+
+        self._request_session = requests.Session()
+        adapter = HTTPAdapter(
+            pool_maxsize=REQUESTS_POOL_MAXSIZE,
+            pool_block=True
+        )
+        self._request_session.mount('http://', adapter)
+        self._request_session.mount('https://', adapter)
 
         # set auth method if any. we defer checking auth mehtod until quering
         self._auth = None

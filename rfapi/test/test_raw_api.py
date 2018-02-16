@@ -136,7 +136,7 @@ class ApiClientTest(unittest.TestCase):
 
     def test_status_query(self):
         api = RawApiClient()
-        status = api.get_status()
+        status = api.get_status(False)
         self.assertIsInstance(status, dict)
 
     def test_app_id(self):
@@ -149,6 +149,11 @@ class ApiClientTest(unittest.TestCase):
         api = RawApiClient(app_name='UnitTest', app_version='42')
         self.assertEqual(api._app_id, 'UnitTest/42 (%s) %s' % (
             platform.platform(), rfapi_python))
+
+        api = RawApiClient(app_name='UnitTest', app_version='42',
+                           platform='SIEM_42')
+        self.assertEqual(api._app_id, 'UnitTest/42 (%s) %s (%s)' % (
+            platform.platform(), rfapi_python, 'SIEM_42'))
 
         api = RawApiClient()
         self.assertEqual(api._app_id, rfapi_python)
@@ -192,7 +197,7 @@ class ApiClientTest(unittest.TestCase):
 
     def test_invalid_token(self):
         with self._assertRaisesRegex(rawapiclient.AuthenticationError,
-                                     "Unknown key=nosuchtoken"):
+                                     "No or invalid token"):
             client = RawApiClient(auth='nosuchtoken')
             client.get_status()
 

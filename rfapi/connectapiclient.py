@@ -26,7 +26,10 @@ from .query import ConnectApiFileResponse
 from .query import ConnectApiCsvFileResponse
 from .util import snake_to_camel_case
 
-from builtins import str as text
+try:
+    from builtins import str as text
+except ImportError:
+    pass  # This is only used in the doctests
 
 
 class ConnectApiClient(BaseApiClient):
@@ -53,6 +56,7 @@ class ConnectApiClient(BaseApiClient):
                  app_version=None,
                  pkg_name=None,
                  pkg_version=None,
+                 platform=None,
                  accept_gzip=True):
         """Initialize API.
 
@@ -70,13 +74,16 @@ class ConnectApiClient(BaseApiClient):
                 header (ex "1.0"). Use of this requires app_name above.
             pkg_name and pkg_version: similar to the app_name etc above.
             accept_gzip: whether we accept gzip compressed results or not
+            platform: id of the platform running the script (ex Splunk_1.2.3)
 
         See http://docs.python-requests.org/en/master/user/advanced/#proxies
         for more information about proxies.
         """
         BaseApiClient.__init__(self, auth, url, proxies, timeout,
                                app_name, app_version,
-                               pkg_name, pkg_version, accept_gzip,
+                               pkg_name, pkg_version,
+                               accept_gzip,
+                               platform,
                                api_version=2)
 
     # pylint: disable=too-many-branches
@@ -109,18 +116,22 @@ class ConnectApiClient(BaseApiClient):
         try:
             LOG.debug("Requesting query path_info=%s", route)
 
-            response = requests.get(self._url + route,
-                                    params=params,
-                                    headers=headers,
-                                    auth=self._auth,
-                                    proxies=self._proxies,
-                                    timeout=self._timeout,
-                                    verify=True,
-                                    stream=stream)
+            # don't use session for streams. Might cause issues when
+            # downloading many files in parallel and connections are
+            # evicted from the urllib3 connection pool prematurely.
+            req = requests if stream else self._request_session
+            response = req.get(self._url + route,
+                               params=params,
+                               headers=headers,
+                               auth=self._auth,
+                               proxies=self._proxies,
+                               timeout=self._timeout,
+                               verify=True,
+                               stream=stream)
             response.raise_for_status()
 
         except requests.HTTPError as req_http_err:
-            msg = "Exception occured during path_info: %s. Error was: %s"
+            msg = "Exception occurred during path_info: %s. Error was: %s"
             LOG.exception(msg, route, response.content)
             self._raise_http_error(response, req_http_err)
 
@@ -136,7 +147,7 @@ class ConnectApiClient(BaseApiClient):
                 raise
 
         except requests.RequestException:
-            LOG.exception("Exception occured during query: %s.", route)
+            LOG.exception("Exception occurred during query: %s.", route)
             raise
 
         if raw or stream:
@@ -721,3 +732,43 @@ class ConnectApiClient(BaseApiClient):
         """
         return self.get_extension_info("vulnerability", id,
                                        extension, metadata)
+
+    #########################################################################
+    #                 Alerts
+    #########################################################################
+
+    def get_alert_rule(self,
+                       freetext,
+                       limit=10):
+        """Fetch information about an alert rule.
+
+        freetext: Freetext search
+        limit: limit the number of responses
+        """
+        params = {
+            'freetext': freetext,
+            'limit': limit
+        }
+        return self._query('alert/rule', params=params)
+
+    def search_alerts(self, **kwargs):
+        """Search for alerts.
+
+        See ConnectApi for search parameters.
+
+        Ex:
+        >>> api = ConnectApiClient(app_name='DocTest')
+        >>> res = api.search_alerts()
+        >>> type(res)
+        <class 'rfapi.query.ConnectApiResponse'>
+        """
+        return self.search('alert', **kwargs)
+
+    def lookup_alert(self, alert_id):
+        """Lookup an alert.
+
+        Ex:
+        api = ConnectApiClient(app_name='DocTest')
+        res = api.lookup_alert(<an alert id>)
+        """
+        return self.get_entity('alert', alert_id)
