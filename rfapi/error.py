@@ -10,11 +10,10 @@ class Error(Exception):
 class MissingAuthError(Error):
     """No token was supplied."""
 
-    def __init__(self):
+    def __init__(self, message='No Recorded Future API key or '
+                 'authentication method was provided.', *args):
         """Init the error with the query"""
-        message = 'No Recorded Future API key or authentication ' \
-                  'method was provided.'
-        Error.__init__(self, message)
+        Error.__init__(self, message % (args))
 
 
 class RemoteServerError(Error):

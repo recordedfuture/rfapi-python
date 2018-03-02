@@ -1,6 +1,11 @@
 Changelog
 =========
 
+2.2.1 (2018-03-01)
+------------------
+
+- Bug fix for orderBy assertion in ConnectApi search
+
 2.2.0 (2018-02-16)
 ------------------
 

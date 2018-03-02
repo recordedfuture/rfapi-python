@@ -13,7 +13,11 @@
 # limitations under the License.
 #
 """Client library for the Recorded Future Connect API."""
+import os
 import re
+import hashlib
+import shutil
+from tempfile import NamedTemporaryFile
 import requests
 from requests.exceptions import ReadTimeout
 
@@ -27,11 +31,12 @@ from .query import ConnectApiCsvFileResponse
 from .util import snake_to_camel_case
 
 try:
-    from builtins import str as text
+    from builtins import str as text  # pylint: disable=unused-import
 except ImportError:
     pass  # This is only used in the doctests
 
 
+# pylint: disable=too-many-public-methods
 class ConnectApiClient(BaseApiClient):
     """Provides simplified access to the Recorded Future Connect API.
 
@@ -47,7 +52,7 @@ class ConnectApiClient(BaseApiClient):
     <class 'rfapi.connectapiclient.ConnectApiClient'>
     """
 
-    def __init__(self,
+    def __init__(self,  # pylint: disable=too-many-arguments
                  auth=DEFAULT_AUTH,
                  url=CONNECT_API_URL,
                  proxies=None,
@@ -87,7 +92,7 @@ class ConnectApiClient(BaseApiClient):
                                api_version=2)
 
     # pylint: disable=too-many-branches
-    def _query(self,
+    def _query(self,  # pylint: disable=too-many-arguments
                route,
                params=None,
                tries_left=DEFAULT_RETRIES,
@@ -115,12 +120,12 @@ class ConnectApiClient(BaseApiClient):
 
         try:
             LOG.debug("Requesting query path_info=%s", route)
-
             # don't use session for streams. Might cause issues when
             # downloading many files in parallel and connections are
             # evicted from the urllib3 connection pool prematurely.
+            url = self._url + route
             req = requests if stream else self._request_session
-            response = req.get(self._url + route,
+            response = req.get(url,
                                params=params,
                                headers=headers,
                                auth=self._auth,
@@ -198,7 +203,7 @@ class ConnectApiClient(BaseApiClient):
 
         return response
 
-    def save_risklist(self,
+    def save_risklist(self,  # pylint: disable=too-many-arguments
                       outfile,
                       group,
                       category=None,
@@ -275,8 +280,10 @@ class ConnectApiClient(BaseApiClient):
 
         if 'orderBy' in params:
             # field in rest api is `orderby`
-            assert params['orderBy'] in ['asc', 'desc']
             params["orderby"] = params.pop("orderBy")
+
+        if 'direction' in params:
+            assert params['direction'] in ['asc', 'desc']
 
         if 'ipRange' in params:
             # move the attribute (`range` is a python reserved keyword)
@@ -324,6 +331,10 @@ class ConnectApiClient(BaseApiClient):
         route = "%s/%s/extension/%s" % (category, entity, extension)
         response = self._query(route, params)
         return DotAccessDict(response.result).get('data')
+
+    #########################################################################
+    #                 DemoEvents
+    #########################################################################
 
     def get_demoevents(self,
                        group,
@@ -409,11 +420,11 @@ class ConnectApiClient(BaseApiClient):
         kwargs.update(ip_range=ip_range)
         return self.search('ip', **kwargs)
 
-    def lookup_ip(self, ip, **kwargs):
+    def lookup_ip(self, ip_number, **kwargs):
         """Lookup information about the ip.
 
         Args:
-          ip: ip number,
+          ip_number: ip number,
           kwargs: see possible values in `self.get_entity`
 
         Returns:
@@ -425,18 +436,18 @@ class ConnectApiClient(BaseApiClient):
         >>> type(api.lookup_ip("8.8.8.8"))
         <class 'rfapi.datamodel.DotAccessDict'>
         """
-        return self.get_entity("ip", ip, **kwargs)
+        return self.get_entity("ip", ip_number, **kwargs)
 
-    def get_ip_extension(self, ip, extension, metadata=None):
+    def get_ip_extension(self, ip_number, extension, metadata=None):
         """Get extension information for an entity.
         Possible extensions vary for your user, enterprise, and category.
 
         Args:
-          ip: ip address
+          ip_number: ip address
           extension: name of extension
           metadata (bool): whether to get metadata or not
         """
-        return self.get_extension_info("ip", ip, extension, metadata)
+        return self.get_extension_info("ip", ip_number, extension, metadata)
 
     def get_ip_demoevents(self,
                           limit=1000):
@@ -577,11 +588,11 @@ class ConnectApiClient(BaseApiClient):
         kwargs.update(algorithm=alg)
         return self.search('hash', **kwargs)
 
-    def lookup_hash(self, hash, **kwargs):
+    def lookup_hash(self, hash_value, **kwargs):
         """Lookup information about the hash.
 
         Args:
-          hash: a hash,
+          hash_value: a hash,
           kwargs: see possible values in `self.get_entity`
 
         Returns:
@@ -593,18 +604,18 @@ class ConnectApiClient(BaseApiClient):
         >>> type(api.lookup_hash("478c076749bef74eaf9bed4af917aee228620b23"))
         <class 'rfapi.datamodel.DotAccessDict'>
         """
-        return self.get_entity("hash", hash, **kwargs)
+        return self.get_entity("hash", hash_value, **kwargs)
 
-    def get_hash_extension(self, hash, extension, metadata=None):
+    def get_hash_extension(self, hash_value, extension, metadata=None):
         """Get extension information for an entity.
         Possible extensions vary for your user, enterprise, and category.
 
         Args:
-          hash: a hash
+          hash_value: a hash
           extension: name of extension
           metadata (bool): whether to get metadata or not
         """
-        return self.get_extension_info("hash", hash,
+        return self.get_extension_info("hash", hash_value,
                                        extension, metadata)
 
     def get_hash_demoevents(self, limit=1000):
@@ -641,11 +652,11 @@ class ConnectApiClient(BaseApiClient):
         kwargs.update(freetext=freetext)
         return self.search('malware', **kwargs)
 
-    def lookup_malware(self, id, **kwargs):
+    def lookup_malware(self, malware_id, **kwargs):
         """Lookup information about the malware id.
 
         Args:
-          id: recorded future entity id of a malware,
+          malware_id: recorded future entity id of a malware,
           kwargs: see possible values in `self.get_entity`
 
         Returns:
@@ -657,7 +668,7 @@ class ConnectApiClient(BaseApiClient):
         >>> type(api.lookup_malware('KoneQR')) # RF ID For Red October
         <class 'rfapi.datamodel.DotAccessDict'>
         """
-        return self.get_entity("malware", id, **kwargs)
+        return self.get_entity("malware", malware_id, **kwargs)
 
     #########################################################################
     #                 Vulnerability
@@ -702,12 +713,12 @@ class ConnectApiClient(BaseApiClient):
         kwargs.update(freetext=freetext, cvss_score=cvss_score)
         return self.search('vulnerability', **kwargs)
 
-    def lookup_vulnerability(self, id, **kwargs):
+    def lookup_vulnerability(self, malware_id, **kwargs):
         """Lookup information about the vulnerability name.
         (CVE number of RF ID)
 
         Args:
-          id: vulnerability id (CVE number of RF ID)
+          malware_id: vulnerability id (CVE number of RF ID)
           kwargs: see possible values in `self.get_entity`
 
         Returns:
@@ -719,18 +730,19 @@ class ConnectApiClient(BaseApiClient):
         >>> type(api.lookup_vulnerability('CVE-2014-0160'))
         <class 'rfapi.datamodel.DotAccessDict'>
         """
-        return self.get_entity("vulnerability", id, **kwargs)
+        return self.get_entity("vulnerability", malware_id, **kwargs)
 
-    def get_vulnerability_extension(self, id, extension, metadata=None):
+    def get_vulnerability_extension(self, malware_id, extension,
+                                    metadata=None):
         """Get extension information for an entity.
         Possible extensions vary for your user, enterprise, and category.
 
         Args:
-          id: vulnerability id (CVE number of RF ID)
+          malware_id: vulnerability id (CVE number of RF ID)
           extension: name of extension
           metadata (bool): whether to get metadata or not
         """
-        return self.get_extension_info("vulnerability", id,
+        return self.get_extension_info("vulnerability", malware_id,
                                        extension, metadata)
 
     #########################################################################
@@ -772,3 +784,124 @@ class ConnectApiClient(BaseApiClient):
         res = api.lookup_alert(<an alert id>)
         """
         return self.get_entity('alert', alert_id)
+
+    #########################################################################
+    #                 FusionFiles
+    #########################################################################
+
+    def get_fusion_file(self, path):
+        """Fetch a fusion file.
+
+        Args:
+            path: the path to the file, ex /home/example/file.csv
+        """
+        response = self._query('fusion/files/',
+                               params={'path': path},
+                               stream=True)
+        return response
+
+    def head_fusion_file(self, path):
+        """Make a HEAD http requests for a fusion file.
+
+        Args:
+            path: the fusion file path
+
+        Returns:
+            the headers as a dict.
+        """
+        self._check_auth()
+        route = 'fusion/files'
+        params = self._prepare_params({'path': path})
+        headers = self._prepare_headers()
+
+        try:
+            LOG.debug("Requesting query path_info=%s", route)
+            # don't use session for streams. Might cause issues when
+            # downloading many files in parallel and connections are
+            # evicted from the urllib3 connection pool prematurely.
+
+            url = self._url + 'fusion/files'
+            response = requests.head(url,
+                                     params=params,
+                                     headers=headers,
+                                     auth=self._auth,
+                                     proxies=self._proxies,
+                                     timeout=self._timeout)
+            response.raise_for_status()
+        except requests.HTTPError as req_http_err:
+            msg = "Exception occurred during path_info: %s. Error was: %s"
+            LOG.exception(msg, route, response.content)
+            self._raise_http_error(response, req_http_err)
+
+        except ReadTimeout:
+            msg = "Read Timeout occured during path_info: %s."
+            LOG.exception(msg, route)
+            raise
+        return response.headers
+
+    def save_fusion_file(self,
+                         path,
+                         outfile):
+        """Save a fusion file to local file.
+        Args:
+            path: the fusion file path
+            outfile: file handler with write permission
+
+        Example:
+            >> with open("iprisklist.csv", "wb") as f:
+            >>     save_risklist(f, "/home/example/file.csv")
+        """
+        resp = self.get_fusion_file(path)
+        for chunk in resp.iter_content(chunk_size=1024):
+            outfile.write(chunk)
+
+    def sync_fusion_file(self, path, local_path, tmpdir=None):
+        """Check if a fusion file differs from a local file. Update if yes.
+
+        Comparaison is made using SHA256 hash sum.
+
+        Args:
+            path: the fusion file path
+            local_path: the path to the local file
+            tmpdir (optional): use a specified temporary directory
+        """
+        def _needs_sync(path, local_path):
+            """Check if a sync is needed."""
+            # Make a HEAD call to api about the fusion file
+            headers = self.head_fusion_file(path)
+
+            # Check the SHA256 checksum
+            desired256 = headers.get('X-RF-Content-SHA256', None)
+            try:
+                sha256 = hashlib.sha256()
+                with open(local_path, 'rb') as local_fd:
+                    for block in iter(lambda: local_fd.read(65536), b''):
+                        sha256.update(block)
+                actual256 = sha256.hexdigest()
+                if desired256 == actual256:
+                    return False  # Checksum matches - no update necessary
+                return True  # Checksum mismatch - update
+            except IOError:
+                return True  # File proably missing - update
+
+        if _needs_sync(path, local_path):
+            if tmpdir is not None:
+                kwargs = {'dir': tmpdir}
+                LOG.info('Sync of local file %s with fusion file %s needed. '
+                         'Using tmpdir %s',
+                         local_path, path, tmpdir)
+            else:
+                kwargs = {}
+                LOG.info('sync of local file %s with fusion file %s needed',
+                         local_path, path)
+            with NamedTemporaryFile(**kwargs) as out:
+                self.save_fusion_file(path, out)
+                os.fsync(out)
+                out.seek(0)
+                with open(local_path, 'w') as destobj:
+                    shutil.copyfileobj(out, destobj)
+            return True  # Signal that there was an update.
+        else:
+            LOG.debug('no sync of local file %s with fusion file %s needed',
+                      local_path, path)
+            return False  # Signal that there was no update.

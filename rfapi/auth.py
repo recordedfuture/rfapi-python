@@ -49,7 +49,9 @@ class RFTokenAuth(requests.auth.AuthBase):
             return os.environ['RF_TOKEN']
         if 'RECFUT_TOKEN' in os.environ:
             return os.environ['RECFUT_TOKEN']
-        return None
+        raise MissingAuthError('Auth method auto selected but no token '
+                               'found in environment (RF_TOKEN or '
+                               'RECFUT_TOKEN).')
 
 
 class SignatureHashAuth(requests.auth.AuthBase):

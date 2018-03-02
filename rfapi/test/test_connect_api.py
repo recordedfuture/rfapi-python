@@ -88,7 +88,7 @@ class ConnectApiClientTest(unittest.TestCase):
 
     def test_get_search(self):
         client = ConnectApiClient()
-        resp = client.search("ip", **dict(risk_score="(91,100]"))
+        resp = client.search("ip", **dict(risk_score="(91,100]", direction='desc'))
         self.assertIsInstance(resp, ConnectApiResponse)
 
     def test_get_ip(self):

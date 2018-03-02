@@ -100,7 +100,7 @@ class BaseApiClient(object):
         self._request_session.mount('http://', adapter)
         self._request_session.mount('https://', adapter)
 
-        # set auth method if any. we defer checking auth mehtod until quering
+        # set auth method if any. we defer checking auth method until querying
         self._auth = None
         if isinstance(auth, requests.auth.AuthBase):
             self._auth = auth
