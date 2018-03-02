@@ -1,10 +1,12 @@
 Changelog
 =========
 
-2.2.1 (2018-03-01)
+2.3.0 (2018-03-02)
 ------------------
 
+- Add support for Fusion calls in ConnectApi
 - Bug fix for orderBy assertion in ConnectApi search
+- Renaming some arguments for clarification. Possibly breaking.
 
 2.2.0 (2018-02-16)
 ------------------
