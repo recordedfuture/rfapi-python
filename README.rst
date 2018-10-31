@@ -1,3 +1,6 @@
+.. image:: https://badge.fury.io/py/rfapi.svg
+    :target: https://badge.fury.io/py/rfapi
+    
 rfapi-python
 ============
 
