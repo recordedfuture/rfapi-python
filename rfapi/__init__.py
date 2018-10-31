@@ -14,12 +14,17 @@
 """Python library for accessing Recorded Future, Inc. API."""
 
 # must be specified first, is imported by RawApiClient
-__version__ = '2.3.0'  # nopep8
+
+__version__ = '2.4.0'  # nopep8
+
+import os
 
 # RFQ-7231 about user agent: product/product-version
 APP_ID = 'rfapi-python/%s' % __version__
-RAW_API_URL = 'https://api.recordedfuture.com/query/'
-CONNECT_API_URL = 'https://api.recordedfuture.com/v2/'
+DEFAULT_API_URL = 'https://api.recordedfuture.com'
+RF_API_URL = os.environ.get("RF_API_URL", DEFAULT_API_URL)
+RAW_API_URL = '%s/rfq/' % RF_API_URL
+CONNECT_API_URL = '%s/v2/' % RF_API_URL
 
 # export for easy access
 

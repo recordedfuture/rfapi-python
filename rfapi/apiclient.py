@@ -68,11 +68,13 @@ class BaseApiClient(object):
                  pkg_version=None,
                  accept_gzip=True,
                  platform_id=None,
-                 api_version=1):
+                 api_version=1,
+                 verify=True):
         self._url = url
         self._proxies = proxies
         self._timeout = timeout
         self._accept_gzip = accept_gzip
+        self.verify = verify
 
         # Setup app_id
         id_list = []
@@ -165,11 +167,11 @@ class BaseApiClient(object):
         return JSONQueryResponse(resp, response)
 
     def _make_response(self, expect_json, response):
-        if not expect_json:
+        if expect_json:
+            resp = self._parse_json_response(response)
+            return self._make_json_response(resp, response)
+        else:
             if 'csv' in response.headers.get('content-type', ''):
                 return CSVQueryResponse(response.text, response)
             else:
                 return BaseQueryResponse(response.text, response)
-        else:
-            resp = self._parse_json_response(response)
-            return self._make_json_response(resp, response)

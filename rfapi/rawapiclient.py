@@ -2,8 +2,11 @@ import warnings
 
 import requests
 from requests.exceptions import ReadTimeout
+import copy
+import logging
 
-from .apiclient import *
+from .apiclient import BaseApiClient, DEFAULT_AUTH, DEFAULT_TIMEOUT, \
+    DEFAULT_RETRIES
 from . import RAW_API_URL
 from .dotindex import dot_index
 from .datamodel import Entity, \
@@ -16,7 +19,13 @@ from .query import BaseQuery, \
     EventQuery, \
     get_query_type
 
+from .query import JSONQueryResponse, \
+    CSVQueryResponse
+
+# pylint: disable=unused-import
 from .error import RemoteServerError, InvalidRFQError
+
+LOG = logging.getLogger(__name__)
 
 
 class RawApiClient(BaseApiClient):
@@ -94,6 +103,7 @@ class RawApiClient(BaseApiClient):
 
         params = self._prepare_params(params)
         headers = self._prepare_headers()
+        response = None
 
         try:
             LOG.debug("Requesting query json=%s", query)
@@ -107,7 +117,19 @@ class RawApiClient(BaseApiClient):
             response.raise_for_status()
 
         except requests.HTTPError as req_http_err:
-            msg = "An exception occurred during the query: %s. Error was: %s"
+            if response.status_code == 502 or response.status_code == 503:
+                # gateway error or service unavailable, ok to retry
+                if tries_left > 0:
+                    tries_left -= 1
+                    msg = "Got error with status=%s. " \
+                          "Retrying with tries=%s left"
+                    LOG.warning(msg, response.status_code, tries_left)
+                    return self.query(query,
+                                      params=params,
+                                      tries_left=tries_left)
+
+            msg = "An exception occurred during the query: %s. " \
+                  "Error was: %s"
             LOG.exception(msg, query, response.content)
             self._raise_http_error(response, req_http_err)
 
@@ -131,7 +153,7 @@ class RawApiClient(BaseApiClient):
                 raise
 
         except requests.RequestException:
-            LOG.exception("Exception occured during query: %s.", query)
+            LOG.exception("Exception occurred during query: %s.", query)
             raise
 
         expect_json = not ("output" in query and
@@ -140,11 +162,13 @@ class RawApiClient(BaseApiClient):
 
     def _validate_json_response(self, resp):
         if resp.get('status', '') == 'FAILURE':
-            raise RemoteServerError(("Server failure:\n"
-                                     "HTTP Status: {1}\t"
-                                     "Message: {2}").format(
-                resp.get('code', None),
-                resp.get('error', 'NONE')))
+            msg = "Server failure:\n" \
+                  "HTTP Status: {code}\t" \
+                  "Message: {error}"
+            code = resp.get('code', None)
+            error = resp.get('error', 'NONE')
+            msg = msg.format(code=code, error=error)
+            raise RemoteServerError(msg)
 
     # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
     def paged_query(self,

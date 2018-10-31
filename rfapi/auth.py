@@ -76,7 +76,6 @@ class SignatureHashAuth(requests.auth.AuthBase):
         else:
             hash_text = "?" + path_params + body + timestamp
 
-        print(hash_text)
         hmac_hash = hmac.new(self.userkey,
                              hash_text,
                              hashlib.sha256).hexdigest()

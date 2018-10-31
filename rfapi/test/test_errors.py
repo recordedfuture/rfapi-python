@@ -1,5 +1,5 @@
 import unittest
-from ..error import JsonParseError, MissingAuthError
+from rfapi.error import JsonParseError, MissingAuthError
 
 
 class ApiClientTest(unittest.TestCase):

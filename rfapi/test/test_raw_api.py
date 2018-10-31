@@ -2,20 +2,23 @@
 import unittest
 import sys
 import platform
-from rfapi import rawapiclient, __version__
+from rfapi import __version__
 from rfapi.datamodel import Event, Entity, Reference
 from rfapi.query import JSONQueryResponse
 from rfapi import RawApiClient
 
 # for deprecation alias test
 from rfapi import ApiClient
+import rfapi.error
+
+from . import IS_DEFAULT_API_URL, IS_DEFAULT_API_URL_MSG
 
 
 class ApiClientTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     def test_missing_token(self):
-        with self.assertRaises(rawapiclient.MissingAuthError):
+        with self.assertRaises(rfapi.error.MissingAuthError):
             client = RawApiClient(auth=None)
             client.get_status()
 
@@ -28,6 +31,7 @@ class ApiClientTest(unittest.TestCase):
             RawApiClient('dummy', proxies=proxies)
         )
 
+    @unittest.skipUnless(IS_DEFAULT_API_URL, IS_DEFAULT_API_URL_MSG)
     def test_api_query(self):
         query = {
             "entity": {
@@ -159,7 +163,7 @@ class ApiClientTest(unittest.TestCase):
         self.assertEqual(api._app_id, rfapi_python)
 
     def test_paging_aggregate_query_fails(self):
-        with self.assertRaises(rawapiclient.InvalidRFQError):
+        with self.assertRaises(rfapi.error.InvalidRFQError):
             client = RawApiClient()
             query = {
                 "instance": {
@@ -192,17 +196,18 @@ class ApiClientTest(unittest.TestCase):
         responses = [resp for resp in client.paged_query(query,
                                                          batch_size=10,
                                                          limit=limit)]
+        total_count = responses[0].total_count
         n_results = sum(map(lambda r: r.returned_count, responses))
-        self.assertEqual(n_results, limit)
+        self.assertEqual(n_results, min(limit, total_count))
 
     def test_invalid_token(self):
-        with self._assertRaisesRegex(rawapiclient.AuthenticationError,
-                                     "No or invalid token"):
+        with self._assertRaisesRegex(rfapi.error.AuthenticationError,
+                                     "Authentication failed"):
             client = RawApiClient(auth='nosuchtoken')
             client.get_status()
 
     def test_invalid_query(self):
-        with self._assertRaisesRegex(rawapiclient.HttpError, "No such query"):
+        with self._assertRaisesRegex(rfapi.error.HttpError, "No such query"):
             client = RawApiClient()
             client.query({"apa": "bepa"})
 

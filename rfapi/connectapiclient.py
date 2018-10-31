@@ -35,6 +35,11 @@ try:
 except ImportError:
     pass  # This is only used in the doctests
 
+try:
+    from urllib import quote as url_quote  # Python 2.X
+except ImportError:
+    from urllib.parse import quote as url_quote  # Python 3+
+
 
 # pylint: disable=too-many-public-methods
 class ConnectApiClient(BaseApiClient):
@@ -62,7 +67,8 @@ class ConnectApiClient(BaseApiClient):
                  pkg_name=None,
                  pkg_version=None,
                  platform=None,
-                 accept_gzip=True):
+                 accept_gzip=True,
+                 verify=True):
         """Initialize API.
 
         Args:
@@ -89,7 +95,8 @@ class ConnectApiClient(BaseApiClient):
                                pkg_name, pkg_version,
                                accept_gzip,
                                platform,
-                               api_version=2)
+                               api_version=2,
+                               verify=verify)
 
     # pylint: disable=too-many-branches
     def _query(self,  # pylint: disable=too-many-arguments
@@ -117,6 +124,7 @@ class ConnectApiClient(BaseApiClient):
         self._check_auth()
         params = self._prepare_params(params)
         headers = self._prepare_headers()
+        response = None
 
         try:
             LOG.debug("Requesting query path_info=%s", route)
@@ -131,7 +139,7 @@ class ConnectApiClient(BaseApiClient):
                                auth=self._auth,
                                proxies=self._proxies,
                                timeout=self._timeout,
-                               verify=True,
+                               verify=self.verify,
                                stream=stream)
             response.raise_for_status()
 
@@ -147,7 +155,9 @@ class ConnectApiClient(BaseApiClient):
                 tries_left -= 1
                 return self._query(route,
                                    params=params,
-                                   tries_left=tries_left)
+                                   tries_left=tries_left,
+                                   stream=stream,
+                                   raw=raw)
             else:
                 raise
 
@@ -745,6 +755,104 @@ class ConnectApiClient(BaseApiClient):
         return self.get_extension_info("vulnerability", malware_id,
                                        extension, metadata)
 
+    def get_vulnerability_demoevents(self, limit=1000):
+        """Fetch a vulnerability demo events.
+
+        limit: the number of events
+
+        >>> api = ConnectApiClient()
+        >>> res = api.get_vulnerability_demoevents()
+        >>> isinstance(res.text, text)
+        True
+        """
+        return self.get_demoevents('vulnerability', limit)
+
+    #########################################################################
+    #                 URL
+    #########################################################################
+
+    def get_url_risklist(self,
+                         category=None,
+                         output_format='csv/splunk',
+                         gzip=False):
+        """Fetch an URL risk list.
+
+        category: limit content to entities matching a category/rule
+        output_format: the format of the returned file (ex csv/splunk)
+        gzip: return the file compressed in gzip format
+        """
+        return self.get_risklist('url', category,
+                                 output_format, gzip)
+
+    def get_url_riskrules(self):
+        """Fetch a list of Risk rules and their properties.
+
+        Returns a list of dicts.
+        """
+        return self.get_riskrules('url')
+
+    def search_urls(self, freetext=None, cvss_score=None, **kwargs):
+        """Search for information about matching URLs.
+
+        Args:
+          freetext: A searchterm
+          kwargs: generic search terms (see self.search`)
+
+        Returns:
+          An ConnectApiResponse object
+
+        Ex:
+        >>> api = ConnectApiClient(app_name='DocTest')
+        >>> url = 'https://sites.google.com/site/unblockingnotice/'
+        >>> type(api.search_urls(freetext=url))
+        <class 'rfapi.query.ConnectApiResponse'>
+        """
+        kwargs.update(freetext=freetext, cvss_score=cvss_score)
+        return self.search('url', **kwargs)
+
+    def lookup_url(self, url, **kwargs):
+        """Lookup information about the URL.
+
+        Args:
+          url: URL
+          kwargs: see possible values in `self.get_entity`
+
+        Returns:
+          Requested entity information fields wrapped in a
+          DotAccessDict container.
+
+        Ex:
+        >>> api = ConnectApiClient(app_name='DocTest')
+        >>> url = 'https://sites.google.com/site/unblockingnotice/'
+        >>> type(api.lookup_url(url))
+        <class 'rfapi.datamodel.DotAccessDict'>
+        """
+        return self.get_entity("url", url_quote(url, safe=''), **kwargs)
+
+    def get_url_extension(self, url, extension, metadata=None):
+        """Get extension information for an entity.
+        Possible extensions vary for your user, enterprise, and category.
+
+        Args:
+          url: URL
+          extension: name of extension
+          metadata (bool): whether to get metadata or not
+        """
+        return self.get_extension_info("url", url,
+                                       extension, metadata)
+
+    def get_url_demoevents(self, limit=1000):
+        """Fetch a url demo events.
+
+        limit: the number of events
+
+        >>> api = ConnectApiClient()
+        >>> res = api.get_url_demoevents()
+        >>> isinstance(res.text, text)
+        True
+        """
+        return self.get_demoevents('url', limit)
+
     #########################################################################
     #                 Alerts
     #########################################################################
@@ -855,7 +963,7 @@ class ConnectApiClient(BaseApiClient):
         for chunk in resp.iter_content(chunk_size=1024):
             outfile.write(chunk)
 
-    def sync_fusion_file(self, path, local_path, tmpdir=None):
+    def sync_fusion_file(self, path, local_path, tmpdir=None, sha256sum=None):
         """Check if a fusion file differs from a local file. Update if yes.
 
         Comparaison is made using SHA256 hash sum.
@@ -865,26 +973,35 @@ class ConnectApiClient(BaseApiClient):
             local_path: the path to the local file
             tmpdir (optional): use a specified temporary directory
         """
-        def _needs_sync(path, local_path):
+        def _needs_sync(path, local_path, sha256sum):
             """Check if a sync is needed."""
             # Make a HEAD call to api about the fusion file
             headers = self.head_fusion_file(path)
 
             # Check the SHA256 checksum
             desired256 = headers.get('X-RF-Content-SHA256', None)
-            try:
-                sha256 = hashlib.sha256()
-                with open(local_path, 'rb') as local_fd:
-                    for block in iter(lambda: local_fd.read(65536), b''):
-                        sha256.update(block)
-                actual256 = sha256.hexdigest()
-                if desired256 == actual256:
-                    return False  # Checksum matches - no update necessary
-                return True  # Checksum mismatch - update
-            except IOError:
-                return True  # File proably missing - update
+            if sha256sum is None:  # No checksum supplied, calculate it.
+                try:
+                    sha256 = hashlib.sha256()
+                    with open(local_path, 'rb') as local_fd:
+                        for block in iter(lambda: local_fd.read(65536), b''):
+                            sha256.update(block)
+                    actual256 = sha256.hexdigest()
+                except IOError:
+                    LOG.debug('Check sum could not be checked, local file '
+                              'is missing.')
+                    return True  # File proably missing - update
+            else:
+                actual256 = sha256sum
+            if desired256 == actual256:
+                LOG.debug('Found matching checksums - files are synced.')
+                return False  # Checksum matches - no update necessary
+            LOG.debug('Checksum mismatch - files are not synced.')
+            LOG.debug('Local file: %s (%s)', actual256, local_path)
+            LOG.debug('Api file:   %s', desired256)
+            return True  # Checksum mismatch - update
 
-        if _needs_sync(path, local_path):
+        if _needs_sync(path, local_path, sha256sum):
             if tmpdir is not None:
                 kwargs = {'dir': tmpdir}
                 LOG.info('Sync of local file %s with fusion file %s needed. '
@@ -892,7 +1009,7 @@ class ConnectApiClient(BaseApiClient):
                          local_path, path, tmpdir)
             else:
                 kwargs = {}
-                LOG.info('sync of local file %s with fusion file %s needed',
+                LOG.info('Sync of local file %s with fusion file %s needed',
                          local_path, path)
             with NamedTemporaryFile(**kwargs) as out:
                 self.save_fusion_file(path, out)
@@ -902,6 +1019,6 @@ class ConnectApiClient(BaseApiClient):
                     shutil.copyfileobj(out, destobj)
             return True  # Signal that there was an update.
         else:
-            LOG.debug('no sync of local file %s with fusion file %s needed',
+            LOG.debug('No sync of local file %s with fusion file %s needed',
                       local_path, path)
             return False  # Signal that there was no update.

@@ -18,20 +18,23 @@ __________
 To install with pip run ``pip install rfapi``
 
 An API token is required to use the Recorded Future APIs. You can request
-a Recorded Future API token by contacting support@recordedfuture.com or
+a Recorded Future API token by contacting `support@recordedfuture.com` or
 your account representative. The easiest way to setup your program is to
 save your API token inside an environment variable ``RF_TOKEN``. It is
 also possible to explicitly pass a token in the api client constructor. Different
 licensing models apply to the Raw API and Connect API.
 
+Public documentation for the Raw API has been discontinued. We do provide documentation on
+our `Support Portal <https://support.recordedfuture.com/hc/en-us/categories/115000803507-Raw-API>`__
+
 Examples for Connect API
-________
+________________________
 
 The Connect API client provides a façade for our simplified Connect API.
 See the `Connect API Explorer <https://api.recordedfuture.com/v2/>`__.
 
 Creating a ConnectApiClient
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -42,14 +45,13 @@ Creating a ConnectApiClient
     api = ConnectApiClient(auth='my_token')
 
 Examples for Raw API
-________
+____________________
 
-The Raw API client provides access to our classical API to
-get references, entities, etc.  See the `Raw API documentation <https://github.com/recordedfuture/api/wiki/RecordedFutureAPI>`__
+The Raw API client provides access to our classical API to get references, entities, etc.
 for further details and example usage. See the `Raw API Explorer <https://api.recordedfuture.com/explore.html>`__.
 
 Creating a RawApiClient
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -75,10 +77,7 @@ Entities
 ^^^^^^^^
 
 Searching for entities is done using ``get_entities``. The first
-mandatory argument corresponds to the ``entity`` section of API call (see
-the documentation for `Entities
-<https://github.com/recordedfuture/api/wiki/RecordedFutureAPI#entity-query-example>`__
-in the API documentation).
+mandatory argument corresponds to the ``entity`` section of API call.
 
 .. code:: python
 
@@ -93,10 +92,7 @@ References
 ^^^^^^^^^^
 
 Searching for references is done using ``get_references``. The first
-mandatory argument corresponds to the ``instance`` section of API call (see
-the documentation for `References (aka Instances)
-<https://github.com/recordedfuture/api/wiki/RecordedFutureAPI#instance-query-example>`__
-in the API documentation).
+mandatory argument corresponds to the ``instance`` section of API call.
 
 .. code:: python
 
@@ -112,10 +108,7 @@ Events
 ^^^^^^^^^^
 
 Searching for events is done using ``get_events``. The first
-mandatory argument corresponds to the ``cluster`` section of API call (see
-the documentation for `Events (aka Clusters)
-<https://github.com/recordedfuture/api/wiki/RecordedFutureAPI#events>`__
-in the API documentation).
+mandatory argument corresponds to the ``cluster`` section of API call.
 
 .. code:: python
 

@@ -52,7 +52,7 @@ setuptools.setup(
         '': ['*.rst', 'LICENSE'],
     },
     classifiers = [
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 6 - Mature',
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
         'Topic :: Security'

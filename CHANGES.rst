@@ -1,6 +1,18 @@
 Changelog
 =========
 
+2.4.0 (2018-10-31)
+------------------
+
+- Add retries for Gateway (502) and Server Unavailable (503) Errors.
+- Added support for disabling SSL verification.
+- Added support for fetching demodata for URL and CyberVulnerability types.
+- Added support for using checksum when syncing fusion files.
+- Bug fix for risklist download retries returning not passing
+raw and stream parameters causing bad response type.
+- Minor bug fixes.
+
+
 2.3.0 (2018-03-02)
 ------------------
 
