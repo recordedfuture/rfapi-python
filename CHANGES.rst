@@ -1,6 +1,12 @@
 Changelog
 =========
 
+2.5.0 (2018-02-25)
+------------------
+
+- Discontinue documentation for the Raw API Client.
+
+
 2.4.0 (2018-10-31)
 ------------------
 

@@ -105,6 +105,9 @@ class RawApiClient(BaseApiClient):
         headers = self._prepare_headers()
         response = None
 
+        query_type = get_query_type(query)
+        is_scan = (query_type in query and
+                   query[query_type].get("searchtype") == "scan")
         try:
             LOG.debug("Requesting query json=%s", query)
             response = self._request_session.post(self._url,
@@ -135,9 +138,6 @@ class RawApiClient(BaseApiClient):
 
         except ReadTimeout:
 
-            query_type = get_query_type(query)
-            is_scan = (query_type in query and
-                       query[query_type].get("searchtype") == "scan")
             if is_scan and "page_start" in query[query_type]:
                 # we will get illegal page start if we retry
                 raise

@@ -98,6 +98,8 @@ class BaseQueryResponse(object):
             return int(self._req_response.headers.get("X-RF-RETURNED-COUNT"))
         if 'counts' in self.result:  # Indicates Connect API
             return self.result['counts'].get('returned', None)
+        if "result" in self.result:  # term query
+            return int(self.result['result']['count'])
         return None
 
     @property
@@ -126,6 +128,8 @@ class BaseQueryResponse(object):
             # force long, will be int in py3 otherwise
             if 'total' in self.result['counts']:
                 return long(self.result['counts']['total'])
+        elif "result" in self.result:  # term query
+            return long(self.result['result']['total_count'])
         return None
 
 

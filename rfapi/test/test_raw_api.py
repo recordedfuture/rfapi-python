@@ -65,6 +65,15 @@ class ApiClientTest(unittest.TestCase):
         entity = api.get_entity("INVALID_ID")
         self.assertEqual(entity, None)
 
+    def test_get_entity_with_term_query(self):
+        api = RawApiClient()
+        res = api.query({
+            "from": "entity",
+            "where": {"type": "Airport"},
+            "limit": 1
+        })
+        self.assertIsInstance(res, rfapi.query.JSONQueryResponse)
+
     def test_paged_reference_query(self):
         query = {
             "type": "Acquisition"
