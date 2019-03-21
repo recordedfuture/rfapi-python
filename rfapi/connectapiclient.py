@@ -323,7 +323,14 @@ class ConnectApiClient(BaseApiClient):
         Returns:
           A DotAccessDict object with entity information
         """
-        response = self._query("%s/%s" % (category, name), kwargs)
+
+        params = dict((snake_to_camel_case(k), v) for (k, v) in kwargs.items()
+                      if v is not None)
+
+        if 'fields' in params and isinstance(params['fields'], list):
+            params['fields'] = ",".join(params['fields'])
+
+        response = self._query("%s/%s" % (category, name), params)
         return DotAccessDict(response.result)
 
     def get_extension_info(self, category, entity,
