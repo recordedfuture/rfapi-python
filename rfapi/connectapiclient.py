@@ -330,6 +330,9 @@ class ConnectApiClient(BaseApiClient):
         if 'fields' in params and isinstance(params['fields'], list):
             params['fields'] = ",".join(params['fields'])
 
+        if 'metadata' in params:
+            assert isinstance(params['metadata'], bool)
+
         response = self._query("%s/%s" % (category, name), params)
         return DotAccessDict(response.result)
 
