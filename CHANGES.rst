@@ -1,6 +1,11 @@
 Changelog
 =========
 
+2.5.1 (2018-03-25)
+------------------
+
+- Fix for not joining Fields params in connect api get_entity request, PR#2. Thanks @rkokkelk.
+
 2.5.0 (2018-02-25)
 ------------------
 
