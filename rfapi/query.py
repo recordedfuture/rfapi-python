@@ -29,6 +29,7 @@ def get_query_type(query):
             return atype
     return None
 
+
 _QUERY_TYPE_MAP = {
     'instance': ('instance', 'instances'),
     'reference': ('reference', 'instances'),
