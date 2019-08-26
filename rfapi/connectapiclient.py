@@ -1032,3 +1032,29 @@ class ConnectApiClient(BaseApiClient):
             LOG.debug('No sync of local file %s with fusion file %s needed',
                       local_path, path)
             return False  # Signal that there was no update.
+
+    #########################################################################
+    #                 Analyst Notes
+    #########################################################################
+
+    def search_analyst_notes(self, **kwargs):
+        """Search for alerts.
+
+        See ConnectApi for search parameters.
+
+        Ex:
+        >>> api = ConnectApiClient(app_name='DocTest')
+        >>> res = api.search_analyst_notes()
+        >>> type(res)
+        <class 'rfapi.query.ConnectApiResponse'>
+        """
+        return self.search('analystnote', **kwargs)
+
+    def lookup_analyst_note(self, note_id):
+        """Lookup an analyst note.
+
+        Ex:
+        api = ConnectApiClient(app_name='DocTest')
+        res = api.lookup_analyst_note(<an alert id>)
+        """
+        return self.get_entity('analystnote', note_id)

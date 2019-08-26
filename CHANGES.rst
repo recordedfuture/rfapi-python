@@ -1,12 +1,20 @@
 Changelog
 =========
 
-2.5.1 (2018-03-25)
+2.6.0 (2019-08-26)
+------------------
+
+- Fix tests
+- Add analyst notes methods
+
+
+2.5.1 (2019-03-25)
 ------------------
 
 - Fix for not joining Fields params in connect api get_entity request, PR#2. Thanks @rkokkelk.
 
-2.5.0 (2018-02-25)
+
+2.5.0 (2019-02-25)
 ------------------
 
 - Discontinue documentation for the Raw API Client.

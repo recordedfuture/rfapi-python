@@ -9,7 +9,6 @@ from rfapi import ConnectApiClient
 from rfapi.datamodel import DotAccessDict
 from . import IS_DEFAULT_API_URL, IS_DEFAULT_API_URL_MSG
 
-
 if sys.version_info[0] > 2:
     # pylint: disable=redefined-builtin
     from past.builtins import long, basestring
@@ -18,6 +17,9 @@ if sys.version_info[0] > 2:
 # pylint: disable=too-many-public-methods
 class ConnectApiClientTest(unittest.TestCase):
     _multiprocess_can_split_ = True
+
+    expected_riskrule_keys = set(['name', 'description', 'count',
+                                  'criticality', 'criticalityLabel'])
 
     @unittest.skipUnless(IS_DEFAULT_API_URL, IS_DEFAULT_API_URL_MSG)
     def test_domain_search(self):
@@ -34,35 +36,29 @@ class ConnectApiClientTest(unittest.TestCase):
         self.assertIsInstance(resp.total_count, long)
         self.assertGreater(resp.returned_count, 0)
 
+    def check_list(self, resp):
+        self.assertIsInstance(resp, list)
+        keys = set(resp[0].keys())
+        for e in self.expected_riskrule_keys:
+            self.assertIn(e, keys, "Evidence should contain the key=%s" % e)
+
     @unittest.skipUnless(IS_DEFAULT_API_URL, IS_DEFAULT_API_URL_MSG)
     def test_ip_riskrule(self):
         client = ConnectApiClient()
         resp = client.get_ip_riskrules()
-
-        self.assertIsInstance(resp, list)
-        self.assertEquals(set(resp[0].keys()),
-                          set(['name', 'description', 'count',
-                               'criticality', 'criticalityLabel']))
+        self.check_list(resp)
 
     @unittest.skipUnless(IS_DEFAULT_API_URL, IS_DEFAULT_API_URL_MSG)
     def test_domain_riskrule(self):
         client = ConnectApiClient()
         resp = client.get_domain_riskrules()
-
-        self.assertIsInstance(resp, list)
-        self.assertEquals(set(resp[0].keys()),
-                          set(['name', 'description', 'count',
-                               'criticality', 'criticalityLabel']))
+        self.check_list(resp)
 
     @unittest.skipUnless(IS_DEFAULT_API_URL, IS_DEFAULT_API_URL_MSG)
     def test_hash_riskrule(self):
         client = ConnectApiClient()
         resp = client.get_hash_riskrules()
-
-        self.assertIsInstance(resp, list)
-        self.assertEquals(set(resp[0].keys()),
-                          set(['name', 'description', 'count',
-                               'criticality', 'criticalityLabel']))
+        self.check_list(resp)
 
     @unittest.skipUnless(IS_DEFAULT_API_URL, IS_DEFAULT_API_URL_MSG)
     def test_vuln_risklist(self):
@@ -90,11 +86,7 @@ class ConnectApiClientTest(unittest.TestCase):
     def test_vuln_riskrule(self):
         client = ConnectApiClient()
         resp = client.get_vulnerability_riskrules()
-
-        self.assertIsInstance(resp, list)
-        self.assertEquals(set(resp[0].keys()),
-                          set(['name', 'description', 'count',
-                               'criticality', 'criticalityLabel']))
+        self.check_list(resp)
 
     @unittest.skipUnless(IS_DEFAULT_API_URL, IS_DEFAULT_API_URL_MSG)
     def test_get_search(self):
