@@ -19,10 +19,11 @@ script:
 
 deploy:
  - provider: pypi
-   user: $PYPI_USERNAME
+   user: __token__
    password: $PYPI_TOKEN
    server: https://test.pypi.org/legacy/
    distributions: "sdist bdist_wheel"
    skip_cleanup: true
    on:
-     tags: true
+     branch: master
+     tags: false
