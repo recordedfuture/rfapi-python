@@ -5,6 +5,7 @@ import io
 about = {}
 with io.open("rfapi-red/_version.py", "r", encoding="utf-8") as f:
     exec(f.read(), about)
+version = about["__version__"]
 
 URL = 'https://github.com/recordedfuture/rfapi-python'
 LONG_DESCRIPTION = """rfapi-python
@@ -29,7 +30,7 @@ To install with pip run ``pip install rfapi``
 setuptools.setup(
     name = 'rfapi-red',
     packages = ['rfapi-red'], # this must be the same as the name above
-    version = about["__version__"],
+    version = version,
     description = 'API access to the Recorded Future API.',
     long_description = LONG_DESCRIPTION,
     author = 'Recorded Future, Inc.',
