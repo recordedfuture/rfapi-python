@@ -1,5 +1,6 @@
 import setuptools
 import re
+import io
 
 about = {}
 with io.open("rfapi-red/_version.py", "r", encoding="utf-8") as f:
