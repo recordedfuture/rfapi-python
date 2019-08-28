@@ -3,11 +3,11 @@ language: python
 python: 
  - "3.7.4"
 
-before_install:
- - git clone https://github.com/TravisToolbox/pycodestyle-travis.git
+#before_install:
+# - git clone https://github.com/TravisToolbox/pycodestyle-travis.git
 
-install:
- - ./pycodestyle-travis/install.sh
+#install:
+# - ./pycodestyle-travis/install.sh
 
 script:
  #- ./pycodestyle-travis/scan.sh
