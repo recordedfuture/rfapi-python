@@ -21,7 +21,7 @@ script:
  - echo "__version__ = \"$VERSION\"" > rfapi-red/_version.py
  - ls
  #- ./pycodestyle-travis/scan.sh
- - python3 -m nose --with-doctest rfapi || python2 -m nose --with-doctest rfapi
+ - python3 -m nose --with-doctest rfapi-red || python2 -m nose --with-doctest rfapi-red
  #- python setup.py sdist bdist_wheel
  #- python3 -m twine upload -u @token -p $PYPI_TOKEN --repository-url https://test.pypi.org/legacy/ dist/*
 
