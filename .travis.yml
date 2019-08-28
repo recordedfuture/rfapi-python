@@ -23,7 +23,7 @@ script:
  - ls
  #- ./pycodestyle-travis/scan.sh
  # Run pylint 
- - pylint -E rfapi
+ - pylint -E rfapi || travis_terminate 1
  # Run Tests on both python2 & 3
  - python3 -m nose --with-doctest rfapi || python2 -m nose --with-doctest rfapi
 
