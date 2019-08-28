@@ -25,7 +25,8 @@ script:
  - ls
  #- ./pycodestyle-travis/scan.sh
  # Run pylint, terminate if it has any errors
- - (($RUNPYLINT == true && pylint -E rfapi) || ($RUNPYLINT == false)) || travis_terminate 1
+ - pylint -E rfapi
+# - (($RUNPYLINT == true && pylint -E rfapi) || ($RUNPYLINT == false)) || travis_terminate 1
  # Run Tests on both python2 & 3
  - (python3 -m nose --with-doctest rfapi || python2 -m nose --with-doctest rfapi) || travis_terminate 1
 
