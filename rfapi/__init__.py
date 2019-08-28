@@ -15,9 +15,9 @@
 
 # must be specified first, is imported by RawApiClient
 
-from ._version import __version__
-
 import os
+
+from ._version import __version__
 
 # RFQ-7231 about user agent: product/product-version
 APP_ID = 'rfapi-python/%s' % __version__
