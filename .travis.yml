@@ -22,11 +22,11 @@ matrix:
 script:
  - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
  - echo "__version__ = \"$VERSION\"" > rfapi/_version.py
- - ls
+ - pip install -r test_requirements.txt
  #- ./pycodestyle-travis/scan.sh
  # Run pylint, terminate if it has any errors
- - pylint -E rfapi
-# - (($RUNPYLINT == true && pylint -E rfapi) || ($RUNPYLINT == false)) || travis_terminate 1
+ #- pylint -E rfapi
+ # - (($RUNPYLINT == true && pylint -E rfapi) || ($RUNPYLINT == false)) || travis_terminate 1
  # Run Tests on both python2 & 3
  - (python3 -m nose --with-doctest rfapi || python2 -m nose --with-doctest rfapi) || travis_terminate 1
 

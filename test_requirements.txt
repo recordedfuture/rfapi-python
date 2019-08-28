@@ -1,0 +1,5 @@
+pylint
+nose
+requests
+twine
+future
