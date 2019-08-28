@@ -10,5 +10,5 @@ install:
  - ./pycodestyle-travis/install.sh
 
 script:
- - ./pycodestyle-travis/scan.sh
+ #- ./pycodestyle-travis/scan.sh
  - python3 -m nose --with-doctest rfapi
