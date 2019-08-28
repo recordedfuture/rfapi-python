@@ -1,7 +1,14 @@
 language: python
 
-python: 
- - "3.7.4"
+matrix:
+  include:
+    - name: "Python 3.7.1 on Xenial Linux"
+      python: 3.7
+    - name: "Python 2.6 on Xenial Linux"
+      python: 2.6.17
+
+#python: 
+# - "3.7.4"
 
 #before_install:
 # - git clone https://github.com/TravisToolbox/pycodestyle-travis.git
@@ -10,16 +17,21 @@ python:
 # - ./pycodestyle-travis/install.sh
 
 script:
- - git describe  --tags > rfapi-red/_version.py
+ - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
+ - echo "__version__ = \"$VERSION\"" > rfapi-red/_version.py
+ - ls
  #- ./pycodestyle-travis/scan.sh
- #- python3 -m nose --with-doctest rfapi
+ - python3 -m nose --with-doctest rfapi-red || python2 -m nose --with-doctest rfapi-red
  #- python setup.py sdist bdist_wheel
  #- python3 -m twine upload -u @token -p $PYPI_TOKEN --repository-url https://test.pypi.org/legacy/ dist/*
 
 deploy:
-  provider: pypi
-  user: $PYPI_USERNAME
-  password: $PYPI_TOKEN
-  server: https://test.pypi.org/legacy/
-  distributions: "sdist bdist_wheel"
-
+ - provider: pypi
+   user: __token__
+   password: $PYPI_TOKEN
+   server: https://test.pypi.org/legacy/
+   distributions: "sdist bdist_wheel"
+   skip_cleanup: true
+   on:
+     branch: master
+     tags: true
