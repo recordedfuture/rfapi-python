@@ -31,8 +31,8 @@ if not version:
     raise RuntimeError('Cannot find version information')
 
 setuptools.setup(
-    name = 'rfapi',
-    packages = ['rfapi'], # this must be the same as the name above
+    name = 'rfapi-red',
+    packages = ['rfapi-red'], # this must be the same as the name above
     version = version,
     description = 'API access to the Recorded Future API.',
     long_description = LONG_DESCRIPTION,
