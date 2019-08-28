@@ -10,7 +10,7 @@ python:
 # - ./pycodestyle-travis/install.sh
 
 script:
- - export VERSION=$(git describe  --tags)
+ - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
  - echo "__version__ = \"$VERSION\"" > rfapi-red/_version.py
  #- ./pycodestyle-travis/scan.sh
  #- python3 -m nose --with-doctest rfapi
