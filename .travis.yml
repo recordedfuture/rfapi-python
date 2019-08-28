@@ -18,6 +18,6 @@ python:
 deploy:
   provider: pypi
   user: @token
-  password: $PYPI_PASS
+  password: $PYPI_TOKEN
   server: https://test.pypi.org/legacy/
   distributions: "sdist bdist_wheel"
