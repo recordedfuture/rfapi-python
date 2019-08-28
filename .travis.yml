@@ -9,8 +9,15 @@ python:
 #install:
 # - ./pycodestyle-travis/install.sh
 
-script:
+#script:
  #- ./pycodestyle-travis/scan.sh
  #- python3 -m nose --with-doctest rfapi
- - python setup.py sdist bdist_wheel
- - python3 -m twine upload -u @token -p $PYPI_TOKEN --repository-url https://test.pypi.org/legacy/ dist/*
+ #- python setup.py sdist bdist_wheel
+ #- python3 -m twine upload -u @token -p $PYPI_TOKEN --repository-url https://test.pypi.org/legacy/ dist/*
+
+deploy:
+  provider: pypi
+  user: @token
+  password: $PYPI_PASS
+  server: https://test.pypi.org/legacy/
+  distributions: "sdist bdist_wheel"
