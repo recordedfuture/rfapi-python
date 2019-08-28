@@ -23,7 +23,7 @@ To install with pip run ``pip install rfapi``
 
 # resolve version by opening file. We cannot do import duing install
 # since the package does not yet exist
-with open('rfapi/__init__.py', 'r') as fd:
+with open('rfapi-red/__init__.py', 'r') as fd:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
                         fd.read(), re.MULTILINE).group(1)
 
