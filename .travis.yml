@@ -16,6 +16,7 @@ matrix:
 #install:
 # - ./pycodestyle-travis/install.sh
 
+
 script:
  - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
  - echo "__version__ = \"$VERSION\"" > rfapi/_version.py
@@ -23,8 +24,7 @@ script:
  #- ./pycodestyle-travis/scan.sh
  # Run Tests on both python2 & 3
  - python3 -m nose --with-doctest rfapi || python2 -m nose --with-doctest rfapi
- #- python setup.py sdist bdist_wheel
- #- python3 -m twine upload -u @token -p $PYPI_TOKEN --repository-url https://test.pypi.org/legacy/ dist/*
+ - pylint -E rfapi
 
 before_deploy:
  - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
