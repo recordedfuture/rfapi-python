@@ -37,7 +37,7 @@ setuptools.setup(
     description = 'API access to the Recorded Future API.',
     long_description = LONG_DESCRIPTION,
     author = 'Recorded Future, Inc.',
-    author_email = 'edkrantz@recordedfuture.com'
+    author_email = 'edkrantz@recordedfuture.com',
     license = 'Apache 2',
     url = URL,
     download_url = '%s/tarball/%s' % (URL, version),
