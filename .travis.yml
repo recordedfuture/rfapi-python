@@ -18,7 +18,7 @@ script:
 
 deploy:
   provider: pypi
-  user: @token
+  user: $PYPI_USERNAME
   password: $PYPI_TOKEN
   server: https://test.pypi.org/legacy/
   distributions: "sdist bdist_wheel"
