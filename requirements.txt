@@ -1,3 +1,4 @@
+pylint
 nose
 requests
 twine
