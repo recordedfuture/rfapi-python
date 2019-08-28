@@ -3,7 +3,7 @@ import re
 import io
 
 about = {}
-with io.open("rfapi-red/_version.py", "r", encoding="utf-8") as f:
+with io.open("rfapi/_version.py", "r", encoding="utf-8") as f:
     exec(f.read(), about)
 version = about["__version__"]
 
@@ -28,8 +28,8 @@ To install with pip run ``pip install rfapi``
 """
 
 setuptools.setup(
-    name = 'rfapi-red',
-    packages = ['rfapi-red'], # this must be the same as the name above
+    name = 'rfapi',
+    packages = ['rfapi'], # this must be the same as the name above
     version = version,
     description = 'API access to the Recorded Future API.',
     long_description = LONG_DESCRIPTION,
