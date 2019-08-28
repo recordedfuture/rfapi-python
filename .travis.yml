@@ -21,3 +21,4 @@ deploy:
   password: $PYPI_TOKEN
   server: https://test.pypi.org/legacy/
   distributions: "sdist bdist_wheel"
+
