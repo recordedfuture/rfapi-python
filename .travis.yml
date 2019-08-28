@@ -1,7 +1,14 @@
 language: python
 
-python: 
- - "3.7.4"
+matrix:
+  include:
+    - name: "Python 3.7.1 on Xenial Linux"
+      python: 3.7           # this works for Linux but is ignored on macOS or Windows
+    - name: "Python 3.7.1 on Xenial Linux"
+      python: 3.6           # this works for Linux but is ignored on macOS or Windows
+
+#python: 
+# - "3.7.4"
 
 #before_install:
 # - git clone https://github.com/TravisToolbox/pycodestyle-travis.git
@@ -12,6 +19,7 @@ python:
 script:
  - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
  - echo "__version__ = \"$VERSION\"" > rfapi-red/_version.py
+ - ls
  #- ./pycodestyle-travis/scan.sh
  #- python3 -m nose --with-doctest rfapi
  #- python setup.py sdist bdist_wheel
@@ -26,4 +34,4 @@ deploy:
    skip_cleanup: true
    on:
      branch: master
-     tags: false
+     tags: true
