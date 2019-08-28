@@ -9,7 +9,8 @@ python:
 #install:
 # - ./pycodestyle-travis/install.sh
 
-#script:
+script:
+ - ls
  #- ./pycodestyle-travis/scan.sh
  #- python3 -m nose --with-doctest rfapi
  #- python setup.py sdist bdist_wheel
