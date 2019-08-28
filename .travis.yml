@@ -10,7 +10,8 @@ python:
 # - ./pycodestyle-travis/install.sh
 
 script:
- - git describe  --tags > rfapi-red/_version.py
+ - export VERSION=$(git describe  --tags)
+ - echo "__version__ = \"$VERSION\"" > rfapi-red/_version.py
  #- ./pycodestyle-travis/scan.sh
  #- python3 -m nose --with-doctest rfapi
  #- python setup.py sdist bdist_wheel
@@ -22,4 +23,5 @@ deploy:
   password: $PYPI_TOKEN
   server: https://test.pypi.org/legacy/
   distributions: "sdist bdist_wheel"
+  skip_cleanup: true
 
