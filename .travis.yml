@@ -44,13 +44,14 @@ script:
   #  fi
 
 before_deploy:
- - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
- - echo "__version__ = \"$VERSION\"" > rfapi/_version.py
- - python setup.py build sdist
+  - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
+  - echo "__version__ = \"$VERSION\"" > rfapi/_version.py
+  - python setup.py build sdist
+  - docker login -u "$DOCKERHUB_USER" -p "$DOCKERHUB_PASS"
 
 deploy:
   - provider: script
-    script: docker push "${IMAGE_NAME}:latest" && docker push "${IMAGE_NAME}:${version}"
+    script: docker push "${IMAGE_NAME}:latest" && docker push "${IMAGE_NAME}:${VERSION}"
     on:
       branch: master
   - provider: pypi
