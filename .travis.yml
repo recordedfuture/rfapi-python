@@ -4,7 +4,7 @@ matrix:
   include:
     - name: "Python 3.7 on Xenial Linux"
       python: 3.7
-      env: PYTHON_VER=2.7
+      env: PYTHON_VER=3.7
     - name: "Python 2.7 on Xenial Linux"
       python: 2.7.16
       env: PYTHON_VER=2.6
@@ -29,8 +29,11 @@ script:
  # NOT WORKING
  #- ./pycodestyle-travis/scan.sh
  # Run pylint, terminate if it has any errors
- #- pylint -E rfapi
- - pylint -E rfapi && travis_terminate 1
+ - if [ $PYTHON_VER == 3.7 ]; then
+     pylint -E rfapi || travis_terminate 1
+   else
+     pylint -E rfapi
+   fi
 
 before_deploy:
  - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
@@ -45,7 +48,7 @@ deploy:
 #   distributions: "sdist bdist_wheel"
 #   skip_cleanup: true
 #   on:
-#     condition: $PYTHON_VER = 2.7
+#     condition: $PYTHON_VER = 3.7
 #     branch: master
 #     tags: true
 #  - provider: releases
@@ -54,4 +57,4 @@ deploy:
 #    skip_cleanup: true
 #    on:
 #      tags: true
-#      condition: $PYTHON_VER = 2.7
+#      condition: $PYTHON_VER = 3.7
