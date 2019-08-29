@@ -5,10 +5,13 @@ matrix:
     - name: "Python 3.7 on Xenial Linux"
       python: 3.7
       env: 
-        RUN_PYLINT=true
+        FAIL_BUILD_ON_PYLINT_ERRORS=true
         DEPLOY=true
     - name: "Python 2.7 on Xenial Linux"
       python: 2.7.16
+      env: 
+        FAIL_BUILD_ON_PYLINT_ERRORS=false
+        DEPLOY=false
 
 #python: 
 # - "3.7.4"
@@ -19,22 +22,19 @@ install:
 
 
 script:
- - env
- - echo $SHELL
  - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
  - echo "__version__ = \"$VERSION\"" > rfapi/_version.py
- #
- # Run Tests on both python2 & 3
- #- (python3 -m nose --with-doctest rfapi || python2 -m nose --with-doctest rfapi) || travis_terminate 1
- #
- # NOT WORKING
- #- ./pycodestyle-travis/scan.sh
  # Run pylint, terminate if it has any errors
- - if [ $RUN_PYLINT == true ]; then
+ - if [ $FAIL_BUILD_ON_PYLINT_ERRORS == true ]; then
      pylint -E rfapi || travis_terminate 1;
    else
      pylint -E rfapi;
    fi
+ # Run Tests 
+ # - python -m nose --with-doctest rfapi || travis_terminate 1
+ #
+ # NOT WORKING
+ #- ./pycodestyle-travis/scan.sh
 
 before_deploy:
  - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
