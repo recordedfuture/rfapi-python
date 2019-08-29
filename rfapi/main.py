@@ -3,10 +3,12 @@ import os
 from rfapi import ConnectApiClient
 from argparse import ArgumentParser
 
+
 def iplookup(args):
     api = ConnectApiClient(auth=args.rf_token)
     print(api.lookup_ip(args.ipaddress))
 
+    
 parser = ArgumentParser()
 parser.add_argument('--token', dest="rf_token", default=os.environ["RF_TOKEN"])
 subparsers = parser.add_subparsers()
