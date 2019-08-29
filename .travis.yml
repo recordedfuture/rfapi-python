@@ -30,8 +30,6 @@ before_script:
 
 script:
   - docker build --pull --cache-from "$IMAGE_NAME" --tag "$IMAGE_NAME" .
-  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
-  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:${VERSION}"
   # Run pylint
   - if [ "$RUN_PYLINT" == "true" ]; then
       pylint -E rfapi || travis_terminate 1;
@@ -47,7 +45,9 @@ before_deploy:
   - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
   - echo "__version__ = \"$VERSION\"" > rfapi/_version.py
   - python setup.py build sdist
-  - echo "$DOCKERHUB_PASS" | docker login --username "$DOCKERHUB_USER" ---password-stdin
+  - echo "$DOCKERHUB_PASS" | docker login --username "$DOCKERHUB_USER" --password-stdin
+  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
+  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:${VERSION}"
 
 deploy:
   - provider: script
