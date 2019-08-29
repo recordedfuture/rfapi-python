@@ -15,14 +15,15 @@ matrix:
 #before_install:
 # - git clone https://github.com/TravisToolbox/pycodestyle-travis.git
 
-#install:
+install:
+ - pip install -r requirements.txt
+ - pip install -r test_requirements.txt
 # - ./pycodestyle-travis/install.sh
 
 
 script:
  - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
  - echo "__version__ = \"$VERSION\"" > rfapi/_version.py
- - pip install -r test_requirements.txt
  #- ./pycodestyle-travis/scan.sh
  # Run pylint, terminate if it has any errors
  #- pylint -E rfapi
