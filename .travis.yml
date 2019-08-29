@@ -22,7 +22,7 @@ before_script:
  - echo "__version__ = \"$VERSION\"" > rfapi/_version.py
 
 script:
- # Run pylint, terminate if it has any errors
+ # Run pylint
  - if [ "$RUN_PYLINT" == "true" ]; then
      pylint -E rfapi || travis_terminate 1;
    fi
@@ -38,16 +38,16 @@ before_deploy:
  - python setup.py build sdist
 
 deploy:
-# - provider: pypi
-#   user: __token__
-#   password: $PYPI_TOKEN
-#   server: https://test.pypi.org/legacy/
-#   distributions: "sdist bdist_wheel"
-#   skip_cleanup: true
-#   on:
-#     condition: $DEPLOY = true
-#     branch: master
-#     tags: true
+ - provider: pypi
+   user: __token__
+   password: $PYPI_TOKEN
+   server: https://test.pypi.org/legacy/
+   distributions: "sdist bdist_wheel"
+   skip_cleanup: true
+   on:
+     condition: $DEPLOY = true
+     branch: master
+     tags: true
   - provider: releases
     api_key: "$GITHUB_OAUTH_TOKEN"
     file: "dist/rfapi-$VERSION.tar.gz"
