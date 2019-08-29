@@ -5,12 +5,11 @@ matrix:
     - name: "Python 3.7 on Xenial Linux"
       python: 3.7
       env: 
-        FAIL_BUILD_ON_PYLINT_ERRORS=true
+        FAIL_BUILD_ON_PYLINT_ERRORS="true"
         DEPLOY=true
     - name: "Python 2.7 on Xenial Linux"
       python: 2.7.16
       env: 
-        FAIL_BUILD_ON_PYLINT_ERRORS=false
         DEPLOY=false
 
 #python: 
@@ -25,7 +24,7 @@ script:
  - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
  - echo "__version__ = \"$VERSION\"" > rfapi/_version.py
  # Run pylint, terminate if it has any errors
- - if [ $FAIL_BUILD_ON_PYLINT_ERRORS == true ]; then
+ - if [ $FAIL_BUILD_ON_PYLINT_ERRORS == "true" ]; then
      pylint -E rfapi || travis_terminate 1;
    else
      pylint -E rfapi;
