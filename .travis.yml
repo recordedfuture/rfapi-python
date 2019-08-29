@@ -51,7 +51,9 @@ deploy:
     script: docker push "${IMAGE_NAME}:latest" && docker push "${IMAGE_NAME}:${VERSION}"
     skip_cleanup: true
     on:
-      condition: $DEPLOY = true
+      condition: 
+        $DEPLOY = true
+        $BLEH IS present
       branch: master
   - provider: pypi
     user: __token__
