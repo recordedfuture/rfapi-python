@@ -19,12 +19,13 @@ install:
  - pip install -r requirements.txt
  - pip install -r test_requirements.txt
 
-
-script:
+before_script:
  - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
  - echo "__version__ = \"$VERSION\"" > rfapi/_version.py
+
+script:
  # Run pylint, terminate if it has any errors
- - if [ $FAIL_BUILD_ON_PYLINT_ERRORS == "true" ]; then
+ - if [ "$FAIL_BUILD_ON_PYLINT_ERRORS" == "true" ]; then
      pylint -E rfapi || travis_terminate 1;
    else
      pylint -E rfapi;
