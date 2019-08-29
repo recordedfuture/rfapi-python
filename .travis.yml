@@ -26,10 +26,12 @@ script:
  - if [ "$RUN_PYLINT" == "true" ]; then
      pylint -E rfapi || travis_terminate 1;
    fi
- # Run Tests 
- - python -m nose --with-doctest rfapi || travis_terminate 1
  # Run code style (except on tests that fail currently)
  - pycodestyle --exclude=test rfapi || travis_terminate 1
+ # Run Tests 
+ - if [ -z "$RF_TOKEN" ]; then
+      python -m nose --with-doctest rfapi || travis_terminate 1;
+   fi
 
 before_deploy:
  - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
