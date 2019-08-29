@@ -27,8 +27,6 @@ script:
  # Run pylint, terminate if it has any errors
  - if [ "$FAIL_BUILD_ON_PYLINT_ERRORS" == "true" ]; then
      pylint -E rfapi || travis_terminate 1;
-   else
-     pylint -E rfapi;
    fi
  # Run Tests 
  # - python -m nose --with-doctest rfapi || travis_terminate 1
