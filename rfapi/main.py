@@ -10,7 +10,9 @@ def iplookup(args):
 
 
 parser = ArgumentParser()
-parser.add_argument('--token', dest="rf_token", default=os.environ.get("RF_TOKEN"))
+parser.add_argument('--token', 
+                    dest="rf_token", 
+                    default=os.environ.get("RF_TOKEN"))
 subparsers = parser.add_subparsers()
 
 ipLookupParser = subparsers.add_parser('iplookup')
