@@ -25,6 +25,8 @@ before_script:
 
 script:
   - docker build -t rfapi-app .
+  - docker tag rfapi-app:latest $DOCKERHUB_USERNAME/rfapi-app:latest
+  - docker tag rfapi-app:${VERSION} $DOCKERHUB_USERNAME/rfapi-app:${VERSION}
   # Run pylint
   - if [ "$RUN_PYLINT" == "true" ]; then
       pylint -E rfapi || travis_terminate 1;
