@@ -5,13 +5,10 @@ matrix:
     - name: "Python 3.7 on Xenial Linux"
       python: 3.7
       env: 
-        PYTHON_VER=3.7
         RUN_PYLINT=true
         DEPLOY=true
     - name: "Python 2.7 on Xenial Linux"
       python: 2.7.16
-      env: 
-        PYTHON_VER=2.6
 
 #python: 
 # - "3.7.4"
@@ -33,7 +30,7 @@ script:
  # NOT WORKING
  #- ./pycodestyle-travis/scan.sh
  # Run pylint, terminate if it has any errors
- - if [ $RUN_PYLINT ]; then
+ - if [ $RUN_PYLINT == true ]; then
      pylint -E rfapi || travis_terminate 1;
    else
      pylint -E rfapi;
