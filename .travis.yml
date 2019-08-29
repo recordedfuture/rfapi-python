@@ -15,6 +15,10 @@ matrix:
 #python: 
 # - "3.7.4"
 
+env:
+  global:
+    - IMAGE_NAME=redsolo/rfapi-app
+
 install:
  - pip install -r requirements.txt
  - pip install -r test_requirements.txt
@@ -25,8 +29,8 @@ before_script:
 
 script:
   - docker build -t rfapi-app .
-  - docker tag rfapi-app:latest $DOCKERHUB_USERNAME/rfapi-app:latest
-  - docker tag rfapi-app:${VERSION} $DOCKERHUB_USERNAME/rfapi-app:${VERSION}
+  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
+  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:${VERSION}"
   # Run pylint
   - if [ "$RUN_PYLINT" == "true" ]; then
       pylint -E rfapi || travis_terminate 1;
@@ -44,6 +48,10 @@ before_deploy:
  - python setup.py build sdist
 
 deploy:
+  - provider: script
+    script: docker push "${IMAGE_NAME}:latest" && docker push "${IMAGE_NAME}:${version}"
+    on:
+      branch: master
   - provider: pypi
     user: __token__
     password: $PYPI_TOKEN
