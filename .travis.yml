@@ -9,8 +9,6 @@ matrix:
         DEPLOY=true
     - name: "Python 2.7 on Xenial Linux"
       python: 2.7.16
-      env: 
-        DEPLOY=false
 
 #python: 
 # - "3.7.4"
@@ -50,10 +48,10 @@ deploy:
 #     condition: $DEPLOY = true
 #     branch: master
 #     tags: true
-#  - provider: releases
-#    api_key: "$GITHUB_OAUTH_TOKEN"
-#    file: "dist/rfapi-$VERSION.tar.gz"
-#    skip_cleanup: true
-#    on:
-#      tags: true
-#      condition: $DEPLOY = true
+  - provider: releases
+    api_key: "$GITHUB_OAUTH_TOKEN"
+    file: "dist/rfapi-$VERSION.tar.gz"
+    skip_cleanup: true
+    on:
+      tags: true
+      condition: $DEPLOY = true
