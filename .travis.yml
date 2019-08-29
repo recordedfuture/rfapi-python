@@ -47,8 +47,8 @@ deploy:
 #     branch: master
 #     tags: true
   - provider: releases
-      api_key: "$GITHUB_OAUTH_TOKEN"
-      file: "dist/rfapi-$VERSION.tar.gz"
-      skip_cleanup: true
-      on:
-        tags: true
+    api_key: "$GITHUB_OAUTH_TOKEN"
+    file: "dist/rfapi-$VERSION.tar.gz"
+    skip_cleanup: true
+    on:
+      tags: true
