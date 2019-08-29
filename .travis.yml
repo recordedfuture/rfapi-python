@@ -28,7 +28,7 @@ before_script:
  - echo "__version__ = \"$VERSION\"" > rfapi/_version.py
 
 script:
-  - docker build -t rfapi-app .
+  - docker build -t "$IMAGE_NAME" .
   - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
   - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:${VERSION}"
   # Run pylint
