@@ -50,6 +50,7 @@ deploy:
     on:
       condition: $DEPLOY = true
       branch: master
+      tags: true
   - provider: pypi
     user: __token__
     password: $PYPI_TOKEN
