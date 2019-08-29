@@ -4,10 +4,10 @@ matrix:
   include:
     - name: "Python 3.7 on Xenial Linux"
       python: 3.7
-      env: RUNPYLINT=true
+      env: PYTHON_VER=2.7
     - name: "Python 2.7 on Xenial Linux"
       python: 2.7.16
-      env: RUNPYLINT=false
+      env: PYTHON_VER=2.6
 
 #python: 
 # - "3.7.4"
@@ -43,11 +43,13 @@ deploy:
 #   distributions: "sdist bdist_wheel"
 #   skip_cleanup: true
 #   on:
+#     condition: $PYTHON_VER = 2.7
 #     branch: master
 #     tags: true
- - provider: releases
-     api_key: "$GITHUB_OAUTH_TOKEN"
-     file: "dist/rfapi-$VERSION.tar.gz"
-     skip_cleanup: true
-     on:
-       tags: true
+  - provider: releases
+      api_key: "$GITHUB_OAUTH_TOKEN"
+      file: "dist/rfapi-$VERSION.tar.gz"
+      skip_cleanup: true
+      on:
+        tags: true
+        condition: $PYTHON_VER = 2.7
