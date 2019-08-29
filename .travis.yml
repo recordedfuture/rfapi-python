@@ -12,13 +12,9 @@ matrix:
 #python: 
 # - "3.7.4"
 
-#before_install:
-# - git clone https://github.com/TravisToolbox/pycodestyle-travis.git
-
 install:
  - pip install -r requirements.txt
  - pip install -r test_requirements.txt
-# - ./pycodestyle-travis/install.sh
 
 
 script:
@@ -32,7 +28,7 @@ script:
  #- ./pycodestyle-travis/scan.sh
  # Run pylint, terminate if it has any errors
  #- pylint -E rfapi
- # - (($RUNPYLINT == true && pylint -E rfapi) || ($RUNPYLINT == false)) || travis_terminate 1
+ - ($PYTHON_VER = 2.7 && (pylint -E rfapi || travis_terminate 1))
 
 before_deploy:
  - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
@@ -50,10 +46,10 @@ deploy:
 #     condition: $PYTHON_VER = 2.7
 #     branch: master
 #     tags: true
-  - provider: releases
-    api_key: "$GITHUB_OAUTH_TOKEN"
-    file: "dist/rfapi-$VERSION.tar.gz"
-    skip_cleanup: true
-    on:
-      tags: true
-      condition: $PYTHON_VER = 2.7
+#  - provider: releases
+#    api_key: "$GITHUB_OAUTH_TOKEN"
+#    file: "dist/rfapi-$VERSION.tar.gz"
+#    skip_cleanup: true
+#    on:
+#      tags: true
+#      condition: $PYTHON_VER = 2.7
