@@ -8,6 +8,10 @@ def iplookup(args):
     api = ConnectApiClient(auth=args.rf_token)
     print(api.lookup_ip(args.ipaddress))
 
+def domainLookup(args):
+    api = ConnectApiClient(auth=args.rf_token)
+    print(api.lookup_domain(args.domainname))
+
 
 parser = ArgumentParser()
 parser.add_argument('--token',
@@ -18,6 +22,10 @@ subparsers = parser.add_subparsers()
 ipLookupParser = subparsers.add_parser('iplookup')
 ipLookupParser.add_argument('ipaddress')
 ipLookupParser.set_defaults(func=iplookup)
+
+domainNameLookupParser = subparsers.add_parser('domainnamelookup')
+domainNameLookupParser.add_argument('domainname')
+domainNameLookupParser.set_defaults(func=domainLookup)
 
 
 if __name__ == "__main__":
