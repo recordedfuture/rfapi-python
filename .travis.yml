@@ -2,7 +2,6 @@ language: python
 
 services: docker
 
-
 matrix:
   include:
     - name: "Python 3.7 on Xenial Linux"
@@ -51,7 +50,6 @@ deploy:
     on:
       condition: $DEPLOY = true
       branch: master
-      tags: true
   - provider: pypi
     user: __token__
     password: $PYPI_TOKEN
@@ -61,7 +59,6 @@ deploy:
     on:
       condition: $DEPLOY = true
       branch: master
-      tags: true
   - provider: releases
     api_key: "$GITHUB_OAUTH_TOKEN"
     file: "dist/rfapi-$VERSION.tar.gz"
