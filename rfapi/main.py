@@ -8,6 +8,7 @@ def iplookup(args):
     api = ConnectApiClient(auth=args.rf_token)
     print(api.lookup_ip(args.ipaddress))
 
+
 def domainLookup(args):
     api = ConnectApiClient(auth=args.rf_token)
     print(api.lookup_domain(args.domainname))
