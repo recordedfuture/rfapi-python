@@ -148,7 +148,7 @@ class ConnectApiClientTest(unittest.TestCase):
         client = ConnectApiClient()
         res = client.get_url_demoevents(limit=1)
         # pylint: disable=anomalous-backslash-in-string
-        pattern = '.+\s+\d+ .+ TCP_MISS/.+GET https?://\S+/\S+ - DIRECT/.*'
+        pattern = '.+\s+\d+ .+ TCP_MISS/.+GET https?://\S+/\S* - DIRECT/.*'
         self.assertRegexpMatches(res.text, pattern)
 
     @unittest.skipUnless(IS_DEFAULT_API_URL, IS_DEFAULT_API_URL_MSG)
