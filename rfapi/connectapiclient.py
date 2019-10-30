@@ -104,7 +104,8 @@ class ConnectApiClient(BaseApiClient):
                params=None,
                tries_left=DEFAULT_RETRIES,
                stream=False,
-               raw=False):
+               raw=False,
+               method='get'):
         """Perform a standard query.
 
         Args:
@@ -133,16 +134,26 @@ class ConnectApiClient(BaseApiClient):
             # evicted from the urllib3 connection pool prematurely.
             url = self._url + route
             req = requests if stream else self._request_session
-            response = req.get(url,
-                               params=params,
-                               headers=headers,
-                               auth=self._auth,
-                               proxies=self._proxies,
-                               timeout=self._timeout,
-                               verify=self.verify,
-                               stream=stream)
-            response.raise_for_status()
 
+            if method == 'post':
+                response = req.post(url,
+                                    json=params,
+                                    headers=headers,
+                                    auth=self._auth,
+                                    proxies=self._proxies,
+                                    timeout=self._timeout,
+                                    verify=self.verify,
+                                    stream=stream)
+            else:
+                response = req.get(url,
+                                   params=params,
+                                   headers=headers,
+                                   auth=self._auth,
+                                   proxies=self._proxies,
+                                   timeout=self._timeout,
+                                   verify=self.verify,
+                                   stream=stream)
+            response.raise_for_status()
         except requests.HTTPError as req_http_err:
             msg = "Exception occurred during path_info: %s. Error was: %s"
             LOG.exception(msg, route, response.content)
@@ -482,6 +493,11 @@ class ConnectApiClient(BaseApiClient):
         """
         return self.get_demoevents('ip', limit)
 
+    def soar_lookup_ip(self, ip):
+        """Do a soar lookup on an ip address"""
+        response = self.soar_lookup(ip_list=[ip])
+        return response.result
+
     #########################################################################
     #                 Domain
     #########################################################################
@@ -566,6 +582,11 @@ class ConnectApiClient(BaseApiClient):
         """
         return self.get_demoevents('domain', limit)
 
+    def soar_lookup_domain(self, domain):
+        """Do a soar lookup on a domain"""
+        response = self.soar_lookup(domain_list=[domain])
+        return response.result
+
     #########################################################################
     #                 Hash
     #########################################################################
@@ -649,6 +670,11 @@ class ConnectApiClient(BaseApiClient):
         True
         """
         return self.get_demoevents('hash', limit)
+
+    def soar_lookup_hash(self, hash):
+        """Do a soar lookup on a hash"""
+        response = self.soar_lookup(hash_list=[hash])
+        return response.result
 
     #########################################################################
     #                 Malware
@@ -777,6 +803,11 @@ class ConnectApiClient(BaseApiClient):
         """
         return self.get_demoevents('vulnerability', limit)
 
+    def soar_lookup_vulnerability(self, vulnerability):
+        """Do a soar lookup on a vulnerability"""
+        response = self.soar_lookup(vuln_list=[vulnerability])
+        return response.result
+
     #########################################################################
     #                 URL
     #########################################################################
@@ -862,6 +893,11 @@ class ConnectApiClient(BaseApiClient):
         True
         """
         return self.get_demoevents('url', limit)
+
+    def soar_lookup_url(self, url):
+        """Do a soar lookup on an url"""
+        response = self.soar_lookup(url_list=[url])
+        return response.result
 
     #########################################################################
     #                 Alerts
@@ -1058,3 +1094,33 @@ class ConnectApiClient(BaseApiClient):
         res = api.lookup_analyst_note(<an alert id>)
         """
         return self.get_entity('analystnote', note_id)
+
+    #########################################################################
+    #                 Soar
+    #########################################################################
+
+    def soar_lookup(self, ip_list=None, domain_list=None,
+                    hash_list=None, url_list=None, vuln_list=None):
+        """Do a lookup on the supplied ip's, domain's, hashes,
+           url's and vulnerabilities using the SOAR Api."""
+        route = 'soar/enrichment'
+
+        if ip_list is None:
+            ip_list = []
+        if domain_list is None:
+            domain_list = []
+        if hash_list is None:
+            hash_list = []
+        if url_list is None:
+            url_list = []
+        if vuln_list is None:
+            vuln_list = []
+
+        params = {
+            "ip": ip_list,
+            "domain": domain_list,
+            "hash": hash_list,
+            "url": url_list,
+            "vulnerability": vuln_list
+        }
+        return self._query(route, params, method='post')

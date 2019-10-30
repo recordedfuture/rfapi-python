@@ -15,7 +15,7 @@
 
 # must be specified first, is imported by RawApiClient
 
-__version__ = '2.6.0'  # nopep8
+__version__ = '2.7.0'  # nopep8
 
 import os
 
