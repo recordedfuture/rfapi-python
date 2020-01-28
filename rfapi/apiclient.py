@@ -18,6 +18,7 @@ import logging
 import requests
 import sys
 import platform
+import requests.auth
 
 # pylint: disable=redefined-builtin
 from future.utils import raise_from
@@ -76,23 +77,35 @@ class BaseApiClient(object):
         self._accept_gzip = accept_gzip
         self.verify = verify
 
-        # Setup app_id
-        id_list = []
-        if app_name is not None and app_version is not None:
-            id_list.append('%s/%s (%s)' % (app_name, app_version,
-                                           platform.platform()))
-        elif app_name is not None:
-            id_list.append('%s (%s)' % (app_name, platform.platform()))
-        if pkg_name is not None and pkg_version is not None:
-            id_list.append('%s/%s' % (pkg_name, pkg_version))
-        elif pkg_name is not None:
-            id_list.append('%s' % (pkg_name))
+        if app_name is None:
+            raise ValueError("Parameter app_name required to make calls to RecordedFuture!")
 
-        if platform_id is not None:
-            id_list.append('%s (%s)' % (APP_ID, platform_id))
-        else:
-            id_list.append('%s' % APP_ID)
-        self._app_id = ' '.join(id_list)
+        if app_version is None:
+            app_version = "1.0.0"
+
+        if platform_id is None:
+            platform_id = platform.platform()
+
+        if pkg_name is None:
+            pkg_name = ""
+
+        if pkg_version is None:
+            pkg_version = ""
+
+        pkg_info = ""
+        if pkg_name is not None or pkg_version is not None:
+            pkg_name = pkg_name or "package"
+            pkg_version = pkg_version or "1.0.0"
+            pkg_info = "{pkg_name}/{pkg_ver}".format(pkg_name=pkg_name, pkg_ver=pkg_version)
+
+        # User Agent Fix required by
+        # https://support.recordedfuture.com/hc/en-us/articles/360003936573-Adding-a-User-Agent-request-header-to-help-track-API-Calls
+        self._app_id = "{name}+{ver} ({platform}) {pkg_info}".format(
+            name=app_name,
+            ver=app_version,
+            platform=platform_id,
+            pkg_info=pkg_info
+        )
 
         self._request_session = requests.Session()
         adapter = HTTPAdapter(
@@ -143,7 +156,7 @@ class BaseApiClient(object):
 
     def _prepare_headers(self):
         headers = {
-            'User-Agent': self._app_id
+            'X-RF-USER-Agent': self._app_id
         }
 
         if not self._accept_gzip:
@@ -156,6 +169,7 @@ class BaseApiClient(object):
         except ValueError as err:
             errc = JsonParseError(str(err), response)
             raise_from(errc, err)
+
         self._validate_json_response(resp)
         return resp
 
