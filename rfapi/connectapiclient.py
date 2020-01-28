@@ -21,6 +21,7 @@ from tempfile import NamedTemporaryFile
 import requests
 from requests.exceptions import ReadTimeout
 
+from .error import JsonParseError
 from .apiclient import BaseApiClient, DEFAULT_AUTH, DEFAULT_TIMEOUT
 from .apiclient import DEFAULT_RETRIES, LOG, requests
 from . import CONNECT_API_URL
@@ -983,6 +984,7 @@ class ConnectApiClient(BaseApiClient):
             local_path: the path to the local file
             tmpdir (optional): use a specified temporary directory
         """
+
         def _needs_sync(path, local_path, sha256sum):
             """Check if a sync is needed."""
             # Make a HEAD call to api about the fusion file
@@ -1058,3 +1060,33 @@ class ConnectApiClient(BaseApiClient):
         res = api.lookup_analyst_note(<an alert id>)
         """
         return self.get_entity('analystnote', note_id)
+
+    def publish_analyst_note(self, title, text, topic=[], entities=[], note_entities=[], context_entities=[],
+                             validated_on=None, labels=[]):
+        """Publish an Analyst Note
+
+        Ex:
+        >>> api = ConnectApiClient(app_name='DocTest')
+        >>> res = api.publish_analyst_note("TestNote", "this is the content", context_entities=["<entity id>"])
+        {'document_id': u'doc:<doc id>'}
+        """
+        response = self._request_session.post(
+            self._url + "analystnote/publish",
+            json={
+                "title": title,
+                "text": text,
+                "topic": topic,
+                "entities": entities,
+                "note_entities": note_entities,
+                "context_entities": context_entities,
+                "validated_on": validated_on,
+                "labels": labels
+
+            },
+            headers=self._prepare_headers(),
+            auth=self._auth
+        )
+        try:
+            return DotAccessDict(response.json())
+        except ValueError as e:
+            raise JsonParseError(str(e), response)
