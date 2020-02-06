@@ -38,18 +38,8 @@ before_deploy:
   - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
   - echo "__version__ = \"$VERSION\"" > rfapi/_version.py
   - python setup.py build sdist
-#  - echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
-#  - docker build --pull --cache-from "$IMAGE_NAME" --tag "$IMAGE_NAME" .
-#  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
-#  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:${VERSION}"
 
 deploy:
-#  - provider: script
-#    script: docker push "${IMAGE_NAME}:latest" && docker push "${IMAGE_NAME}:${VERSION}"
-#    skip_cleanup: true
-#    on:
-#      condition: $DEPLOY = true
-#      branch: master
   - provider: pypi
     user: __token__
     password: $PYPI_TOKEN
