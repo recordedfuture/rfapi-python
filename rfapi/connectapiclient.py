@@ -1012,14 +1012,13 @@ class ConnectApiClient(BaseApiClient):
     def sync_fusion_file(self, path, local_path, tmpdir=None, sha256sum=None):
         """Check if a fusion file differs from a local file. Update if yes.
 
-        Comparaison is made using SHA256 hash sum.
+        Comparison is made using SHA256 hash sum.
 
         Args:
             path: the fusion file path
             local_path: the path to the local file
             tmpdir (optional): use a specified temporary directory
         """
-
         def _needs_sync(path, local_path, sha256sum):
             """Check if a sync is needed."""
             # Make a HEAD call to api about the fusion file
