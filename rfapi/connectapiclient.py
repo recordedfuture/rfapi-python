@@ -21,7 +21,6 @@ from tempfile import NamedTemporaryFile
 import requests
 from requests.exceptions import ReadTimeout
 
-from .error import JsonParseError
 from .apiclient import BaseApiClient, DEFAULT_AUTH, DEFAULT_TIMEOUT
 from .apiclient import DEFAULT_RETRIES, LOG, requests
 from . import CONNECT_API_URL
@@ -1097,35 +1096,49 @@ class ConnectApiClient(BaseApiClient):
         """
         return self.get_entity('analystnote', note_id)
 
-    def publish_analyst_note(self, title, text, topic=[], entities=[], note_entities=[], context_entities=[],
-                             validated_on=None, labels=[]):
+    def publish_analyst_note(self, title, text, topic=None, entities=None,
+                             note_entities=None, context_entities=None,
+                             validated_on=None, validation_urls=None,
+                             labels=None, source=None, resolve_entities=None):
         """Publish an Analyst Note
 
         Ex:
         >>> api = ConnectApiClient(app_name='DocTest')
-        >>> res = api.publish_analyst_note("TestNote", "this is the content", context_entities=["<entity id>"])
+        >>> res = api.publish_analyst_note("TestNote", "this is the content",
+        ... context_entities=["<entity id>"])
         {'document_id': u'doc:<doc id>'}
         """
-        response = self._request_session.post(
-            self._url + "analystnote/publish",
-            json={
-                "title": title,
-                "text": text,
-                "topic": topic,
-                "entities": entities,
-                "note_entities": note_entities,
-                "context_entities": context_entities,
-                "validated_on": validated_on,
-                "labels": labels
+        params = {
+            "title": title,
+            "text": text,
+        }
 
-            },
-            headers=self._prepare_headers(),
-            auth=self._auth
-        )
-        try:
-            return DotAccessDict(response.json())
-        except ValueError as e:
-            raise JsonParseError(str(e), response)
+        if topic is not None:
+            params["topic"] = topic
+        if entities is not None:
+            params["entities"] = entities
+        if note_entities is not None:
+            params["note_entities"] = note_entities
+        if context_entities is not None:
+            params["context_entities"] = context_entities
+        if validated_on is not None:
+            params["validated_on"] = validated_on
+        if validation_urls is not None:
+            params["validation_urls"] = validation_urls
+        if labels is not None:
+            params["labels"] = labels
+
+        qs = {}
+        if source is not None:
+            qs["source"] = url_quote(source)
+        if resolve_entities is not None:
+            qs["resolveEntities"] = "true" if resolve_entities else "false"
+        query_str = "" if len(qs) == 0 else \
+            "?" + "&".join(["{}={}".format(k, v) for (k, v) in qs.items()])
+
+        url = "analystnote/publish" + query_str
+        response = self._query(url, params, method='post')
+        return DotAccessDict(response.result)
 
     #########################################################################
     #                 Soar
