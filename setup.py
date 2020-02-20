@@ -1,5 +1,11 @@
 import setuptools
 import re
+import io
+
+about = {}
+with io.open("rfapi/_version.py", "r", encoding="utf-8") as f:
+    exec(f.read(), about)
+version = about["__version__"]
 
 URL = 'https://github.com/recordedfuture/rfapi-python'
 LONG_DESCRIPTION = """rfapi-python
@@ -21,15 +27,6 @@ To install with pip run ``pip install rfapi``
 ..
 """
 
-# resolve version by opening file. We cannot do import duing install
-# since the package does not yet exist
-with open('rfapi/__init__.py', 'r') as fd:
-    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
-                        fd.read(), re.MULTILINE).group(1)
-
-if not version:
-    raise RuntimeError('Cannot find version information')
-
 setuptools.setup(
     name = 'rfapi',
     packages = ['rfapi'], # this must be the same as the name above
@@ -37,8 +34,7 @@ setuptools.setup(
     description = 'API access to the Recorded Future API.',
     long_description = LONG_DESCRIPTION,
     author = 'Recorded Future, Inc.',
-    author_email = ['ess@recordedfuture.com',
-                    'edkrantz@recordedfuture.com'],
+    author_email = 'edkrantz@recordedfuture.com',
     license = 'Apache 2',
     url = URL,
     download_url = '%s/tarball/%s' % (URL, version),

@@ -1,5 +1,9 @@
-.. image:: https://badge.fury.io/py/rfapi.svg
-    :target: https://badge.fury.io/py/rfapi
+|pypi-badge|_ |travis-badge|_
+
+.. |pypi-badge| image:: https://badge.fury.io/py/rfapi.svg
+.. _pypi-badge: https://badge.fury.io/py/rfapi
+.. |travis-badge| image:: https://travis-ci.org/redsolo/rfapi-python.svg?branch=master
+.. _travis-badge: https://travis-ci.org/redsolo/rfapi-python
 
 rfapi-python
 ============

@@ -1,0 +1,53 @@
+language: python
+
+matrix:
+  include:
+    - name: "Python 3.7 on Xenial Linux"
+      python: 3.7
+      env: 
+        RUN_PYLINT=true
+        DEPLOY=true
+    - name: "Python 2.7 on Xenial Linux"
+      python: 2.7.16
+
+install:
+ - pip install -r requirements.txt
+ - pip install -r test_requirements.txt
+
+before_script:
+ - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
+ - echo "__version__ = \"$VERSION\"" > rfapi/_version.py
+
+script:
+  - if [ "$RUN_PYLINT" == "true" ]; then
+      pylint -E rfapi || travis_terminate 1;
+    fi
+  - pycodestyle --exclude=test rfapi || travis_terminate 1
+  - if [ ! -z "$RF_TOKEN" ]; then
+       python -m nose --with-doctest rfapi || travis_terminate 1;
+    fi
+
+before_deploy:
+  - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
+  - echo "__version__ = \"$VERSION\"" > rfapi/_version.py
+  - python setup.py build sdist
+
+deploy:
+  - provider: pypi
+    user: __token__
+    password: $PYPI_TOKEN
+    server: https://test.pypi.org/legacy/
+    distributions: "sdist bdist_wheel"
+    skip_cleanup: true
+    skip_existing: true
+    on:
+      condition: $DEPLOY = true
+      branch: master
+      tags: true
+  - provider: releases
+    api_key: "$GITHUB_OAUTH_TOKEN"
+    file: "dist/rfapi-$VERSION.tar.gz"
+    skip_cleanup: true
+    on:
+      condition: $DEPLOY = true
+      tags: true
