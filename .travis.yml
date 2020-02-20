@@ -1,7 +1,5 @@
 language: python
 
-#services: docker
-
 matrix:
   include:
     - name: "Python 3.7 on Xenial Linux"
@@ -12,10 +10,6 @@ matrix:
     - name: "Python 2.7 on Xenial Linux"
       python: 2.7.16
 
-env:
-  global:
-    - IMAGE_NAME=redsolo/rfapi-app
-
 install:
  - pip install -r requirements.txt
  - pip install -r test_requirements.txt
@@ -23,7 +17,6 @@ install:
 before_script:
  - export VERSION=$(git describe --tags --abbrev=1 | sed -E 's|-(.*)-.*|.\1|g')
  - echo "__version__ = \"$VERSION\"" > rfapi/_version.py
- - docker pull "$IMAGE_NAME" || true
 
 script:
   - if [ "$RUN_PYLINT" == "true" ]; then
