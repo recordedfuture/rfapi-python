@@ -12,23 +12,20 @@ perform analysis which is aware of events happening around the globe
 Future Temporal Analytics™ Engine across a vast set of events, entities,
 and time points spanning from the far past into the future.
 
-We provide our users with 2 API clients in this package; the Connect API Client
-and the Raw API Client, see below.
+We provide our users with an API client in this package;
+the Connect API Client, see below.
 
 Installing
 __________
 
 To install with pip run ``pip install rfapi``
 
-An API token is required to use the Recorded Future APIs. You can request
+An API token is required to use the Recorded Future API. You can request
 a Recorded Future API token by contacting `support@recordedfuture.com` or
 your account representative. The easiest way to setup your program is to
 save your API token inside an environment variable ``RF_TOKEN``. It is
-also possible to explicitly pass a token in the api client constructor. Different
-licensing models apply to the Raw API and Connect API.
+also possible to explicitly pass a token in the api client constructor.
 
-Public documentation for the Raw API has been discontinued. We do provide documentation on
-our `Support Portal <https://support.recordedfuture.com/hc/en-us/categories/115000803507-Raw-API>`__
 
 Examples for Connect API
 ________________________
