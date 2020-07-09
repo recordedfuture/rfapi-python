@@ -4,16 +4,22 @@
 rfapi-python
 ============
 
-Python 2/3 library for using the Recorded Future API
+Python 2/3 library for using the Recorded Future Connect API
 
-Recorded Future’s API enables you to build analytic applications and
-perform analysis which is aware of events happening around the globe
-24x7. You can perform queries and receive results from the Recorded
-Future Temporal Analytics™ Engine across a vast set of events, entities,
-and time points spanning from the far past into the future.
+Recorded Future’s Connect API enables partners and clients to access
+Recorded Future threat intelligence programmatically via a simple to use,
+information rich RESTful API. In particular, the Connect API makes it easy
+to access a wealth of context and risk related information on several
+canonical cybersecurity entities, including IP addresses, domains, URLs,
+file hashes, and vulnerabilities.
 
-We provide our users with an API client in this package;
-the Connect API Client, see below.
+Note that using the rfapi package is NOT a prerequisite for utilizing
+the Recorded Future Connect API, and many partners and clients have
+created powerful integrations working directly with API calls provided
+through the `API Explorer <https://api.recordedfuture.com/v2/>. `
+Also, developers with an existing login to the Recorded Future portal
+can also access a comprehensive set of documentation on the Connect API via
+this users-only `support site <https://support.recordedfuture.com/hc/en-us/categories/115000153607-Connect-API>`.
 
 Installing
 __________
