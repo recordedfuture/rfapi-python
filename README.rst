@@ -1,6 +1,12 @@
 .. image:: https://badge.fury.io/py/rfapi.svg
     :target: https://badge.fury.io/py/rfapi
 
+
+===========
+This repo has been deprecated and will be removed in the near future.
+===========
+
+
 rfapi-python
 ============
 
